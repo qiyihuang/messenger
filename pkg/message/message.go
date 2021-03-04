@@ -1,14 +1,5 @@
 package message
 
-import (
-	"bytes"
-	"encoding/json"
-	"errors"
-	"fmt"
-	"io"
-	"net/http"
-)
-
 // Author represents author object in an embed object.
 type Author struct {
 	Name    string `json:"name"`
@@ -46,37 +37,4 @@ type Message struct {
 	Username string  `json:"username,omitempty"`
 	Embeds   []Embed `json:"embeds,omitempty"`
 	Content  string  `json:"content,omitempty"`
-}
-
-func formatBody(msg Message) (io.Reader, error) {
-	jsonMsg, err := json.Marshal(msg)
-	if err != nil {
-		return nil, err
-	}
-
-	body := bytes.NewBuffer(jsonMsg)
-	return body, nil
-}
-
-// MakeRequest make http request to Discord server to send the message.
-func MakeRequest(msg Message, url string) (*http.Response, error) {
-	body, err := formatBody(msg)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := http.Post(url, "application/json", body)
-	if err != nil {
-		return nil, err
-	}
-
-	// Log only when Discord API message (usually error) exists.
-	var respBody map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&respBody)
-	if message, ok := respBody["message"]; ok {
-		errMsg := "Discord API error: " + fmt.Sprintf("%v", message)
-		return nil, errors.New(errMsg)
-	}
-
-	return resp, nil
 }
