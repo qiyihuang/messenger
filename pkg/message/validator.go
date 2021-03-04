@@ -4,9 +4,11 @@ import "errors"
 
 // These are all the length limit Discord API enforce on webhook message.
 const (
-	messageContentLimit = 2000
-	messageTotalLimit   = 6000
+	webhookEmbedsLimit = 10
 
+	contentLimit = 2000
+
+	embedTotalLimit       = 6000
 	embedTitleLimit       = 256
 	embedDescriptionLimit = 2048
 	embedFieldsLimit      = 25
@@ -34,66 +36,71 @@ func validateField(f Field, embedLength *int) error {
 	*embedLength += len(f.Name)
 	*embedLength += len(f.Value)
 
+	if *embedLength > embedTotalLimit {
+		return newError("Embed total")
+	}
+
 	return nil
 }
 
-func validateEmbed(e Embed) (int, error) {
+func validateEmbed(e Embed) error {
 	var embedLength int
 
 	if len(e.Title) > embedTitleLimit {
-		return 0, newError("Embed title")
+		return newError("Embed title")
 	}
 	embedLength += len(e.Title)
 
 	if len(e.Description) > embedDescriptionLimit {
-		return 0, newError("Embed description")
+		return newError("Embed description")
 	}
 	embedLength += len(e.Description)
 
 	if len(e.Author.Name) > embedAuthorNameLimit {
-		return 0, newError("Embed author name")
+		return newError("Embed author name")
 	}
 	embedLength += len(e.Author.Name)
 
 	if len(e.Footer.Text) > embedFooterTextLimit {
-		return 0, newError("Embed footer text")
+		return newError("Embed footer text")
 	}
 	embedLength += len(e.Footer.Text)
 
 	if len(e.Fields) > embedFieldsLimit {
-		return 0, newError("Embed field number")
+		return newError("Embed field number")
 	}
 
 	for _, field := range e.Fields {
 		err := validateField(field, &embedLength)
 		if err != nil {
-			return 0, err
+			return err
 		}
 	}
 
-	return embedLength, nil
+	return nil
 }
 
 // Validate checks Message object against Discord API limits. Returns slice
 // containing length of each embed.
-func Validate(m Message) ([]int, error) {
+func Validate(m Message) error {
 	if m.Content == "" && len(m.Embeds) == 0 {
-		return nil, errors.New("Message must have either content or embeds")
+		return errors.New("Message must have either content or embeds")
 	}
 
-	if len(m.Content) > messageContentLimit {
-		return nil, newError("Message content")
+	if len(m.Content) > contentLimit {
+		return newError("Message content")
 	}
 
-	var lengthSlice []int
+	if len(m.Embeds) > webhookEmbedsLimit {
+		return newError("Message embed number")
+	}
+
 	for _, embed := range m.Embeds {
-		length, err := validateEmbed(embed)
+		err := validateEmbed(embed)
 		if err != nil {
-			return nil, err
+			return err
 		}
-
-		lengthSlice = append(lengthSlice, length)
 	}
 
-	return lengthSlice, nil
+	return nil
 }
