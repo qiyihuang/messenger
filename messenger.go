@@ -8,16 +8,16 @@ import (
 const version = "0.1.0"
 
 // Send sends Message to Discord webhook
-func Send(url string, msg message.Message) error {
-	err := message.Validate(msg)
+func Send(url string, msg message.Message) (err error) {
+	err = message.Validate(msg)
 	if err != nil {
-		return err
+		return
 	}
 
 	_, err = request.Send(msg, url)
 	if err != nil {
-		return err
+		return
 	}
 
-	return nil
+	return
 }
