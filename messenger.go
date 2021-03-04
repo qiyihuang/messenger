@@ -5,6 +5,8 @@ import (
 	"github.com/qiyihuang/messenger/pkg/request"
 )
 
+const version = "0.1.0"
+
 // Send sends Message to Discord webhook
 func Send(url string, msg message.Message) error {
 	err := message.Validate(msg)
