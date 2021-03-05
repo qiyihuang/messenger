@@ -1,4 +1,4 @@
-package request
+package messenger
 
 import (
 	"bytes"
@@ -7,11 +7,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-
-	"github.com/qiyihuang/messenger/pkg/message"
 )
 
-func formatBody(msg message.Message) (io.Reader, error) {
+func formatBody(msg Message) (io.Reader, error) {
 	jsonMsg, err := json.Marshal(msg)
 	if err != nil {
 		return nil, err
@@ -33,8 +31,13 @@ func respError(resp *http.Response) error {
 	return nil
 }
 
-// Send sends the message to Discord via http.
-func Send(msg message.Message, url string) (resp *http.Response, err error) {
+// makeRequest sends the message to Discord via http.
+func makeRequest(msg Message, url string) (resp *http.Response, err error) {
+	err = validateURL(url)
+	if err != nil {
+		return
+	}
+
 	body, err := formatBody(msg)
 	if err != nil {
 		return

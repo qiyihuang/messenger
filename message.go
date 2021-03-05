@@ -1,4 +1,4 @@
-package message
+package messenger
 
 // Author represents author object in an embed object.
 type Author struct {
