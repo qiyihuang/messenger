@@ -9,7 +9,7 @@ const version = "0.1.0"
 
 // Send sends Message to Discord webhook
 func Send(url string, msg message.Message) (err error) {
-	err = message.Validate(msg)
+	err = message.Validate(msg, url)
 	if err != nil {
 		return
 	}

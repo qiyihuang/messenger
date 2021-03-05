@@ -13,7 +13,7 @@ const errorMsg = "length exceeding Discord API limit"
 func TestNewError(t *testing.T) {
 	field := "test"
 
-	err := newError(field)
+	err := limitError(field)
 
 	require.Equal(t, errors.New(field+errorMsg), err, "New error failed")
 }
