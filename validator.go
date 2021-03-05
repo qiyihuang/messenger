@@ -1,4 +1,4 @@
-package message
+package messenger
 
 import (
 	"errors"
@@ -83,6 +83,7 @@ func validateEmbed(e Embed) error {
 	return nil
 }
 
+// validateURL checks Discord webhook url validity.
 func validateURL(url string) error {
 	webhookPrefix := "https://discord.com/api/webhooks/"
 	if !strings.HasPrefix(url, webhookPrefix) {
@@ -92,9 +93,9 @@ func validateURL(url string) error {
 	return nil
 }
 
-// Validate checks Message object against Discord API limits. Returns slice
+// validateMessage checks Message object against Discord API limits. Returns slice
 // containing length of each embed.
-func Validate(m Message, url string) error {
+func validateMessage(m Message) error {
 	if m.Content == "" && len(m.Embeds) == 0 {
 		return errors.New("Message must have either content or embeds")
 	}
@@ -105,10 +106,6 @@ func Validate(m Message, url string) error {
 
 	if len(m.Embeds) > webhookEmbedsLimit {
 		return limitError("Message embed number")
-	}
-
-	if err := validateURL(url); err != nil {
-		return err
 	}
 
 	for _, embed := range m.Embeds {

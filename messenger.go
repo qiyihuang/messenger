@@ -1,23 +1,16 @@
 package messenger
 
-import (
-	"github.com/qiyihuang/messenger/pkg/message"
-	"github.com/qiyihuang/messenger/pkg/request"
-)
+import "net/http"
 
 const version = "0.1.0"
 
 // Send sends Message to Discord webhook
-func Send(url string, msg message.Message) (err error) {
-	err = message.Validate(msg, url)
+func Send(url string, msg Message) (resp *http.Response, err error) {
+	err = validateMessage(msg)
 	if err != nil {
 		return
 	}
 
-	_, err = request.Send(msg, url)
-	if err != nil {
-		return
-	}
-
+	resp, err = makeRequest(msg, url)
 	return
 }
