@@ -9,7 +9,7 @@ import (
 )
 
 func TestWait(t *testing.T) {
-	t.Run("no limit", func(t *testing.T) {
+	t.Run("No limit", func(t *testing.T) {
 		header := http.Header{}
 		header.Set("x-ratelimit-remaining", "")
 		header.Set("x-ratelimit-reset-after", "")
