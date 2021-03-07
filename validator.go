@@ -23,10 +23,26 @@ const (
 )
 
 func limitError(field string) error {
-	return errors.New(field + "length exceeding Discord API limit")
+	return errors.New(field + " length exceeding Discord API limit")
+}
+
+func validateFooter(f Footer) error {
+	if f.Text == "" {
+		return errors.New("Footer text is required")
+	}
+
+	if len(f.Text) > embedFooterTextLimit {
+		return limitError("Embed footer text")
+	}
+
+	return nil
 }
 
 func validateField(f Field, embedLength *int) error {
+	if f.Name == "" || f.Value == "" {
+		return errors.New("Field name and value are required")
+	}
+
 	if len(f.Name) > fieldNameLimit {
 		return limitError("Field name")
 	}
@@ -64,10 +80,14 @@ func validateEmbed(e Embed) error {
 	}
 	embedLength += len(e.Author.Name)
 
-	if len(e.Footer.Text) > embedFooterTextLimit {
-		return limitError("Embed footer text")
+	if e.Footer != (Footer{}) {
+		err := validateFooter(e.Footer)
+		if err != nil {
+			return err
+		}
+
+		embedLength += len(e.Footer.Text)
 	}
-	embedLength += len(e.Footer.Text)
 
 	if len(e.Fields) > embedFieldsLimit {
 		return limitError("Embed field number")
