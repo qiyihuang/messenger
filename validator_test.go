@@ -19,8 +19,26 @@ func TestNewError(t *testing.T) {
 }
 
 func TestValidateField(t *testing.T) {
+	t.Run("Name empty", func(t *testing.T) {
+		field := Field{Value: "Ok"}
+		length := 1
+
+		err := validateField(field, &length)
+
+		require.Equal(t, errors.New("Name and Value are required"), err, "Name empty failed")
+	})
+
+	t.Run("Value empty", func(t *testing.T) {
+		field := Field{Name: "Ok"}
+		length := 1
+
+		err := validateField(field, &length)
+
+		require.Equal(t, errors.New("Name and Value are required"), err, "Name empty failed")
+	})
+
 	t.Run("Field name limit", func(t *testing.T) {
-		field := Field{Name: strings.Repeat("t", fieldNameLimit+1)}
+		field := Field{Name: strings.Repeat("t", fieldNameLimit+1), Value: "Ok"}
 		length := 1
 
 		err := validateField(field, &length)
@@ -29,7 +47,7 @@ func TestValidateField(t *testing.T) {
 	})
 
 	t.Run("Field value limit", func(t *testing.T) {
-		field := Field{Value: strings.Repeat("t", fieldValueLimit+1)}
+		field := Field{Name: "Ok", Value: strings.Repeat("t", fieldValueLimit+1)}
 		length := 1
 
 		err := validateField(field, &length)
@@ -50,7 +68,7 @@ func TestValidateField(t *testing.T) {
 	})
 
 	t.Run("Embed total limit", func(t *testing.T) {
-		field := Field{}
+		field := Field{Name: "Ok", Value: "Ok"}
 		length := embedTotalLimit + 1
 
 		err := validateField(field, &length)
@@ -59,7 +77,7 @@ func TestValidateField(t *testing.T) {
 	})
 
 	t.Run("No error", func(t *testing.T) {
-		field := Field{Name: "Pass", Value: "Pass"}
+		field := Field{Name: "Ok", Value: "Ok"}
 		length := 1
 
 		err := validateField(field, &length)

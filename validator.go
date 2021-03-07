@@ -27,6 +27,10 @@ func limitError(field string) error {
 }
 
 func validateField(f Field, embedLength *int) error {
+	if f.Name == "" || f.Value == "" {
+		return errors.New("Name and Value are required")
+	}
+
 	if len(f.Name) > fieldNameLimit {
 		return limitError("Field name")
 	}
