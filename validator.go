@@ -80,7 +80,7 @@ func validateEmbed(e Embed) error {
 	}
 	embedLength += len(e.Author.Name)
 
-	if &e.Footer != nil {
+	if e.Footer != (Footer{}) {
 		err := validateFooter(e.Footer)
 		if err != nil {
 			return err
