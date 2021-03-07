@@ -2,9 +2,10 @@ package messenger
 
 // Author represents author object in an embed object.
 type Author struct {
-	Name    string `json:"name"`
-	URL     string `json:"url"`
-	IconURL string `json:"icon_url"`
+	Name         string `json:"name,omitempty"`
+	URL          string `json:"url,omitempty"`
+	IconURL      string `json:"icon_url,omitempty"`
+	ProxyIconURL string `json:"proxy_icon_url,omitempty"`
 }
 
 // Field represents field object in an embed object.
