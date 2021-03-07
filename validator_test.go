@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const errorMsg = "length exceeding Discord API limit"
+const errorMsg = " length exceeding Discord API limit"
 
 func TestNewError(t *testing.T) {
 	field := "test"
@@ -25,7 +25,7 @@ func TestValidateField(t *testing.T) {
 
 		err := validateField(field, &length)
 
-		require.Equal(t, errors.New("Name and Value are required"), err, "Name empty failed")
+		require.Equal(t, errors.New("Field name and value are required"), err, "Name empty failed")
 	})
 
 	t.Run("Value empty", func(t *testing.T) {
@@ -34,7 +34,7 @@ func TestValidateField(t *testing.T) {
 
 		err := validateField(field, &length)
 
-		require.Equal(t, errors.New("Name and Value are required"), err, "Name empty failed")
+		require.Equal(t, errors.New("Field name and value are required"), err, "Name empty failed")
 	})
 
 	t.Run("Field name limit", func(t *testing.T) {
