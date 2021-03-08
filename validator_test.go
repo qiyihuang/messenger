@@ -34,6 +34,14 @@ func TestValidateFooter(t *testing.T) {
 
 		require.Equal(t, errors.New("Embed footer text"+errorMsg), err, "Embed footer limit failed")
 	})
+
+	t.Run("Pass", func(t *testing.T) {
+		footer := Footer{Text: "Ok"}
+
+		err := validateFooter(footer)
+
+		require.Equal(t, nil, err, "Pass failed")
+	})
 }
 
 func TestValidateField(t *testing.T) {
@@ -137,6 +145,16 @@ func TestValidateEmbed(t *testing.T) {
 		require.Equal(t, errors.New("Footer text is required"), err, "Validate footer failed")
 	})
 
+	t.Run("Validate fields number", func(t *testing.T) {
+		// 26 fields
+		fields := []Field{{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}}
+		embed := Embed{Fields: fields}
+
+		err := validateEmbed(embed)
+
+		require.Equal(t, errors.New("Embed field number"+errorMsg), err, "Validate fields number failed")
+	})
+
 	t.Run("Validate fields", func(t *testing.T) {
 		fields := []Field{{Name: "Ok", Value: "Ok"}, {Name: "Ok"}}
 		embed := Embed{Fields: fields}
@@ -152,6 +170,46 @@ func TestValidateEmbed(t *testing.T) {
 		err := validateEmbed(embed)
 
 		require.Equal(t, nil, err, "Pass failed")
+	})
+
+	t.Run("embedLength addition", func(t *testing.T) {
+		passedEmbed := Embed{
+			Title:       "t",
+			Description: "t",
+			Author:      Author{Name: "t"},
+			Footer:      Footer{Text: "t"},
+			Fields: []Field{
+				{Name: "t", Value: strings.Repeat("t", 1000)},
+				{Name: "t", Value: strings.Repeat("t", 1000)},
+				{Name: "t", Value: strings.Repeat("t", 1000)},
+				{Name: "t", Value: strings.Repeat("t", 1000)},
+				{Name: "t", Value: strings.Repeat("t", 1000)},
+				{Name: "t", Value: strings.Repeat("t", 981)},
+				// The total length 5991 makes it for every single "t"
+				// field +1, the embed fails by just 1 char, so every field
+				// must be counted in order to pass
+			},
+		}
+		failedEmbed := Embed{
+			Title:       "tt",
+			Description: "tt",
+			Author:      Author{Name: "tt"},
+			Footer:      Footer{Text: "tt"},
+			Fields: []Field{
+				{Name: "tt", Value: strings.Repeat("t", 1000)},
+				{Name: "tt", Value: strings.Repeat("t", 1000)},
+				{Name: "tt", Value: strings.Repeat("t", 1000)},
+				{Name: "tt", Value: strings.Repeat("t", 1000)},
+				{Name: "tt", Value: strings.Repeat("t", 1000)},
+				{Name: "tt", Value: strings.Repeat("t", 981)},
+			},
+		}
+
+		err := validateEmbed(passedEmbed)
+		require.Equal(t, nil, err, "embedLength addition pass failed")
+
+		err = validateEmbed(failedEmbed)
+		require.Equal(t, errors.New("Embed total"+errorMsg), err, "embedLength addition error failed")
 	})
 }
 
