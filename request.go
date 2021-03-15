@@ -9,20 +9,22 @@ import (
 	"net/http"
 )
 
-func formatBody(msg Message) (io.Reader, error) {
-	jsonMsg, err := json.Marshal(msg)
-	if err != nil {
-		return nil, err
-	}
-
+func formatBody(msg Message) io.Reader {
+	// Marshal would never fail since Discord webhook message does not
+	// contain types not supported by Marshal.
+	jsonMsg, _ := json.Marshal(msg)
 	body := bytes.NewBuffer(jsonMsg)
-	return body, nil
+	return body
 }
 
 func respError(resp *http.Response) error {
 	// Log only when Discord API message (usually error) exists.
 	var respBody map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&respBody)
+	err := json.NewDecoder(resp.Body).Decode(&respBody)
+	if err != nil {
+		return err
+	}
+
 	if message, ok := respBody["message"]; ok {
 		errMsg := "Discord API error: " + fmt.Sprintf("%v", message)
 		return errors.New(errMsg)
@@ -33,16 +35,7 @@ func respError(resp *http.Response) error {
 
 // makeRequest sends the message to Discord via http.
 func makeRequest(msg Message, url string) (resp *http.Response, err error) {
-	err = validateURL(url)
-	if err != nil {
-		return
-	}
-
-	body, err := formatBody(msg)
-	if err != nil {
-		return
-	}
-
+	body := formatBody(msg)
 	resp, err = http.Post(url, "application/json", body)
 	if err != nil {
 		return
