@@ -38,6 +38,8 @@ func respError(resp *http.Response) error {
 	return nil
 }
 
+var post = http.Post
+
 // send sends the message to Discord via http.
 func (r Request) send() (resp *http.Response, err error) {
 	err = validateURL(r.URL)
@@ -51,7 +53,7 @@ func (r Request) send() (resp *http.Response, err error) {
 	}
 
 	body := formatBody(r.Msg)
-	resp, err = http.Post(r.URL, "application/json", body)
+	resp, err = post(r.URL, "application/json", body)
 	if err != nil {
 		return
 	}

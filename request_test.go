@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"io"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
@@ -76,5 +78,37 @@ func TestRequestSend(t *testing.T) {
 		_, err := r.send()
 
 		require.Equal(t, errors.New("Message must have either content or embeds"), err, "validateMessage error failed")
+	})
+
+	t.Run("Post error", func(t *testing.T) {
+		r := Request{Msg: Message{Content: "Ok"}, URL: "https://discord.com/api/webhooks/"}
+		post = func(url string, contentType string, body io.Reader) (*http.Response, error) {
+			return nil, errors.New("test")
+		}
+
+		_, err := r.send()
+
+		require.Equal(t, errors.New("test"), err, "Post error failed")
+
+	})
+
+	t.Run("respError error", func(t *testing.T) {
+		type body struct {
+			Message string `json:"message,omitempty"`
+			Other   string `json:"other,omitempty"`
+		}
+
+		r := Request{Msg: Message{Content: "Ok"}, URL: "https://discord.com/api/webhooks/"}
+
+		jsonBody, _ := json.Marshal(body{Message: "test"})
+		rr := httptest.NewRecorder()
+		rr.Write(jsonBody)
+		post = func(url string, contentType string, body io.Reader) (*http.Response, error) {
+			return rr.Result(), nil
+		}
+
+		_, err := r.send()
+
+		require.Equal(t, errors.New("Discord API error: test"), err, "respError error failed")
 	})
 }
