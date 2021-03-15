@@ -9,6 +9,11 @@ import (
 	"net/http"
 )
 
+type Request struct {
+	Msg Message
+	URL string
+}
+
 func formatBody(msg Message) io.Reader {
 	// Marshal would never fail since Discord webhook message does not
 	// contain types not supported by Marshal.
@@ -33,10 +38,20 @@ func respError(resp *http.Response) error {
 	return nil
 }
 
-// makeRequest sends the message to Discord via http.
-func makeRequest(msg Message, url string) (resp *http.Response, err error) {
-	body := formatBody(msg)
-	resp, err = http.Post(url, "application/json", body)
+// send sends the message to Discord via http.
+func (r Request) send() (resp *http.Response, err error) {
+	err = validateURL(r.URL)
+	if err != nil {
+		return
+	}
+
+	err = validateMessage(r.Msg)
+	if err != nil {
+		return
+	}
+
+	body := formatBody(r.Msg)
+	resp, err = http.Post(r.URL, "application/json", body)
 	if err != nil {
 		return
 	}

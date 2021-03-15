@@ -60,3 +60,21 @@ func TestRespError(t *testing.T) {
 		require.Equal(t, nil, err, "Resp no error failed")
 	})
 }
+
+func TestRequestSend(t *testing.T) {
+	t.Run("validateURL error", func(t *testing.T) {
+		r := Request{Msg: Message{Content: "test"}, URL: "wrong"}
+
+		_, err := r.send()
+
+		require.Equal(t, errors.New("URL invalid"), err, "validateURL error failed")
+	})
+
+	t.Run("validateMessage error", func(t *testing.T) {
+		r := Request{Msg: Message{}, URL: "https://discord.com/api/webhooks/"}
+
+		_, err := r.send()
+
+		require.Equal(t, errors.New("Message must have either content or embeds"), err, "validateMessage error failed")
+	})
+}
