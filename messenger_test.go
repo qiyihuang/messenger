@@ -10,17 +10,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// sender mocks the Sender interface.
 type sender struct{}
 
-var fakeResp *http.Response
-
+// send mocks the send method in Sender interface.
 // Only returns resp, for the successful case.
-func (s sender) send() (*http.Response, error) {
-	body, _ := json.Marshal("test")
+func (s sender) send(p httpPoster) (*http.Response, error) {
+	body, _ := json.Marshal("Ok")
 	rr := httptest.NewRecorder()
 	rr.Write(body)
-	fakeResp = rr.Result()
-	return fakeResp, nil
+	return rr.Result(), nil
 }
 
 func TestSend(t *testing.T) {
@@ -35,8 +34,9 @@ func TestSend(t *testing.T) {
 	t.Run("Return response", func(t *testing.T) {
 		s := sender{}
 
-		resp, _ := Send(s)
+		resp, err := Send(s)
 
-		require.Equal(t, fakeResp, resp, "Return response failed")
+		require.Equal(t, nil, err, "Return response no error failed")
+		require.IsType(t, &http.Response{}, resp, "Return response type failed")
 	})
 }
