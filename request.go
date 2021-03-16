@@ -9,20 +9,34 @@ import (
 	"net/http"
 )
 
-func formatBody(msg Message) (io.Reader, error) {
-	jsonMsg, err := json.Marshal(msg)
-	if err != nil {
-		return nil, err
-	}
+// Request stores Discord webhook request information
+type Request struct {
+	Msg Message
+	URL string
+}
 
+// httpPoster sends http POST requests. e.g. http.Client
+type httpPoster interface {
+	Post(url string, contentType string, body io.Reader) (*http.Response, error)
+}
+
+// formatBody serialises Message.
+func formatBody(msg Message) io.Reader {
+	// Marshal would never fail since Discord webhook message does not
+	// contain types not supported by Marshal.
+	jsonMsg, _ := json.Marshal(msg)
 	body := bytes.NewBuffer(jsonMsg)
-	return body, nil
+	return body
 }
 
 func respError(resp *http.Response) error {
-	// Log only when Discord API message (usually error) exists.
 	var respBody map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&respBody)
+	err := json.NewDecoder(resp.Body).Decode(&respBody)
+	if err != nil {
+		return err
+	}
+
+	//Discord API error message is written in "message" field in response body.
 	if message, ok := respBody["message"]; ok {
 		errMsg := "Discord API error: " + fmt.Sprintf("%v", message)
 		return errors.New(errMsg)
@@ -31,22 +45,24 @@ func respError(resp *http.Response) error {
 	return nil
 }
 
-// makeRequest sends the message to Discord via http.
-func makeRequest(msg Message, url string) (resp *http.Response, err error) {
-	err = validateURL(url)
+// send sends the message to Discord via http.
+func (r Request) send(p httpPoster) (resp *http.Response, err error) {
+	err = validateURL(r.URL)
 	if err != nil {
 		return
 	}
 
-	body, err := formatBody(msg)
+	err = validateMessage(r.Msg)
 	if err != nil {
 		return
 	}
 
-	resp, err = http.Post(url, "application/json", body)
+	body := formatBody(r.Msg)
+	resp, err = p.Post(r.URL, "application/json", body)
 	if err != nil {
 		return
 	}
+	defer resp.Body.Close()
 
 	err = respError(resp)
 	return

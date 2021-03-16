@@ -1,28 +1,42 @@
 package messenger
 
 import (
+	"encoding/json"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
+// sender mocks the Sender interface.
+type sender struct{}
+
+// send mocks the send method in Sender interface.
+// Only returns resp, for the successful case.
+func (s sender) send(p httpPoster) (*http.Response, error) {
+	body, _ := json.Marshal("Ok")
+	rr := httptest.NewRecorder()
+	rr.Write(body)
+	return rr.Result(), nil
+}
+
 func TestSend(t *testing.T) {
-	t.Run("validateMessage error", func(t *testing.T) {
-		url := "https://discord.com/api/webhooks/"
-		msg := Message{}
+	t.Run("Return error", func(t *testing.T) {
+		r := Request{Msg: Message{Content: "test"}, URL: "wrong"}
 
-		_, err := Send(url, msg)
+		_, err := Send(r)
 
-		require.Equal(t, errors.New("Message must have either content or embeds"), err, "validateMessage error failed")
+		require.Equal(t, errors.New("URL invalid"), err, "Return error failed")
 	})
 
-	t.Run("makeRequest error", func(t *testing.T) {
-		url := "wrong"
-		msg := Message{Content: "test"}
+	t.Run("Return response", func(t *testing.T) {
+		s := sender{}
 
-		_, err := Send(url, msg)
+		resp, err := Send(s)
 
-		require.Equal(t, errors.New("URL invalid"), err, "Validate error failed")
+		require.Equal(t, nil, err, "Return response no error failed")
+		require.IsType(t, &http.Response{}, resp, "Return response type failed")
 	})
 }

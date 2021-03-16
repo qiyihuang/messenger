@@ -2,15 +2,13 @@ package messenger
 
 import "net/http"
 
-const version = "0.1.1"
+// Sender object that can send http requests. e.g. Request.
+type Sender interface {
+	send(httpPoster) (*http.Response, error)
+}
 
 // Send sends Message to Discord webhook
-func Send(url string, msg Message) (resp *http.Response, err error) {
-	err = validateMessage(msg)
-	if err != nil {
-		return
-	}
-
-	resp, err = makeRequest(msg, url)
-	return
+func Send(s Sender) (*http.Response, error) {
+	// In the future may let user customise client, just pass http.DefaultClient at the moment.
+	return s.send(http.DefaultClient)
 }
