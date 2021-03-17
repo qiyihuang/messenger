@@ -88,12 +88,15 @@ func (mp mockedPoster) Post(url string, contentType string, body io.Reader) (*ht
 		return rr.Result(), nil
 	}
 
-	return nil, nil
+	jsonBody, _ := json.Marshal(struct{ Message string }{"Ok"})
+	rr := httptest.NewRecorder()
+	rr.Write(jsonBody)
+	return rr.Result(), nil
 }
 
 func TestRequestSend(t *testing.T) {
 	t.Run("validateURL error", func(t *testing.T) {
-		r := Request{Msg: Message{Content: "test"}, URL: "wrong"}
+		r := Request{Messages: []Message{{Content: "test"}}, URL: "wrong"}
 
 		_, err := r.send(http.DefaultClient)
 
@@ -101,7 +104,7 @@ func TestRequestSend(t *testing.T) {
 	})
 
 	t.Run("validateMessage error", func(t *testing.T) {
-		r := Request{Msg: Message{}, URL: "https://discord.com/api/webhooks/"}
+		r := Request{Messages: []Message{{}}, URL: "https://discord.com/api/webhooks/"}
 
 		_, err := r.send(http.DefaultClient)
 
@@ -109,7 +112,7 @@ func TestRequestSend(t *testing.T) {
 	})
 
 	t.Run("Post error", func(t *testing.T) {
-		r := Request{Msg: Message{Content: "Ok"}, URL: "https://discord.com/api/webhooks/"}
+		r := Request{Messages: []Message{{Content: "Ok"}}, URL: "https://discord.com/api/webhooks/"}
 		mp := mockedPoster{postError: true, respError: false}
 
 		_, err := r.send(mp)
@@ -118,11 +121,20 @@ func TestRequestSend(t *testing.T) {
 	})
 
 	t.Run("respError error", func(t *testing.T) {
-		r := Request{Msg: Message{Content: "Ok"}, URL: "https://discord.com/api/webhooks/"}
+		r := Request{Messages: []Message{{Content: "Ok"}}, URL: "https://discord.com/api/webhooks/"}
 		mp := mockedPoster{postError: false, respError: true}
 
 		_, err := r.send(mp)
 
 		require.Equal(t, errors.New("Discord API error: Response error"), err, "respError error failed")
+	})
+
+	t.Run("Success", func(t *testing.T) {
+		r := Request{Messages: []Message{{Content: "Ok"}}, URL: "https://discord.com/api/webhooks/"}
+		mp := mockedPoster{postError: false, respError: false}
+
+		_, err := r.send(mp)
+
+		require.Equal(t, nil, err, "Success failed")
 	})
 }

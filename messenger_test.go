@@ -15,16 +15,17 @@ type sender struct{}
 
 // send mocks the send method in Sender interface.
 // Only returns resp, for the successful case.
-func (s sender) send(p httpPoster) (*http.Response, error) {
+func (s sender) send(p httpPoster) ([]*http.Response, error) {
 	body, _ := json.Marshal("Ok")
 	rr := httptest.NewRecorder()
 	rr.Write(body)
-	return rr.Result(), nil
+	result := []*http.Response{rr.Result(), rr.Result()}
+	return result, nil
 }
 
 func TestSend(t *testing.T) {
 	t.Run("Return error", func(t *testing.T) {
-		r := Request{Msg: Message{Content: "test"}, URL: "wrong"}
+		r := Request{Messages: []Message{{Content: "test"}}, URL: "wrong"}
 
 		_, err := Send(r)
 
@@ -37,6 +38,6 @@ func TestSend(t *testing.T) {
 		resp, err := Send(s)
 
 		require.Equal(t, nil, err, "Return response no error failed")
-		require.IsType(t, &http.Response{}, resp, "Return response type failed")
+		require.IsType(t, []*http.Response{}, resp, "Return response type failed")
 	})
 }

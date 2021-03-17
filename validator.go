@@ -137,3 +137,20 @@ func validateMessage(m Message) error {
 
 	return nil
 }
+
+// validateRequest calls validateURL and validateMessage to check validity of a Request.
+func validateRequest(r Request) (err error) {
+	err = validateURL(r.URL)
+	if err != nil {
+		return
+	}
+
+	for _, msg := range r.Messages {
+		err = validateMessage(msg)
+		if err != nil {
+			return
+		}
+	}
+
+	return
+}
