@@ -274,3 +274,35 @@ func TestValidateMessage(t *testing.T) {
 		require.Equal(t, nil, err, "Pass failed")
 	})
 }
+
+func TestValidateRequest(t *testing.T) {
+	t.Run("URL error", func(t *testing.T) {
+		msgs := []Message{{Content: "Ok"}}
+		url := "wrong"
+		req := Request{msgs, url}
+
+		err := validateRequest(req)
+
+		require.Equal(t, errors.New("URL invalid"), err, "URL error failed")
+	})
+
+	t.Run("Message error", func(t *testing.T) {
+		msgs := []Message{{Content: "Ok"}, {}} // Failed on second make sure it loops.
+		url := "https://discord.com/api/webhooks/"
+		req := Request{msgs, url}
+
+		err := validateRequest(req)
+
+		require.Equal(t, errors.New("Message must have either content or embeds"), err, "Message error failed")
+	})
+
+	t.Run("Pass", func(t *testing.T) {
+		msgs := []Message{{Content: "Ok"}}
+		url := "https://discord.com/api/webhooks/"
+		req := Request{msgs, url}
+
+		err := validateRequest(req)
+
+		require.Equal(t, nil, err, "Message error failed")
+	})
+}

@@ -7,12 +7,14 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/qiyihuang/messenger/pkg/ratelimit"
 )
 
 // Request stores Discord webhook request information
 type Request struct {
-	Msg Message
-	URL string
+	Messages []Message
+	URL      string
 }
 
 // httpPoster sends http POST requests. e.g. http.Client
@@ -46,24 +48,33 @@ func respError(resp *http.Response) error {
 }
 
 // send sends the message to Discord via http.
-func (r Request) send(p httpPoster) (resp *http.Response, err error) {
-	err = validateURL(r.URL)
+func (r Request) send(p httpPoster) (responses []*http.Response, err error) {
+	err = validateRequest(r)
 	if err != nil {
 		return
 	}
 
-	err = validateMessage(r.Msg)
-	if err != nil {
-		return
+	for _, msg := range r.Messages {
+		body := formatBody(msg)
+		var resp *http.Response
+		resp, err = p.Post(r.URL, "application/json", body)
+		if err != nil {
+			return
+		}
+
+		defer resp.Body.Close()
+		responses = append(responses, resp)
+
+		err = respError(resp)
+		if err != nil {
+			return
+		}
+
+		err = ratelimit.Wait(resp.Header)
+		if err != nil {
+			return
+		}
 	}
 
-	body := formatBody(r.Msg)
-	resp, err = p.Post(r.URL, "application/json", body)
-	if err != nil {
-		return
-	}
-	defer resp.Body.Close()
-
-	err = respError(resp)
 	return
 }
