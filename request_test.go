@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -68,6 +69,7 @@ type mockedPoster struct {
 	// flags to control response.
 	postError bool
 	respError bool
+	waitError bool
 }
 
 // Post mocks Post method in HttpPoster interface.
@@ -85,6 +87,16 @@ func (mp mockedPoster) Post(url string, contentType string, body io.Reader) (*ht
 		jsonBody, _ := json.Marshal(respBody)
 		rr := httptest.NewRecorder()
 		rr.Write(jsonBody)
+		return rr.Result(), nil
+	}
+
+	if mp.waitError == true {
+		rr := httptest.NewRecorder()
+		header := rr.Header()
+		header.Add("x-ratelimit-remaining", "wrong")
+		header.Add("x-ratelimit-reset-after", "1")
+		body, _ := json.Marshal(struct{ Other string }{"Ok"})
+		rr.Write(body)
 		return rr.Result(), nil
 	}
 
@@ -113,7 +125,7 @@ func TestRequestSend(t *testing.T) {
 
 	t.Run("Post error", func(t *testing.T) {
 		r := Request{Messages: []Message{{Content: "Ok"}}, URL: "https://discord.com/api/webhooks/"}
-		mp := mockedPoster{postError: true, respError: false}
+		mp := mockedPoster{postError: true, respError: false, waitError: false}
 
 		_, err := r.send(mp)
 
@@ -122,16 +134,25 @@ func TestRequestSend(t *testing.T) {
 
 	t.Run("respError error", func(t *testing.T) {
 		r := Request{Messages: []Message{{Content: "Ok"}}, URL: "https://discord.com/api/webhooks/"}
-		mp := mockedPoster{postError: false, respError: true}
+		mp := mockedPoster{postError: false, respError: true, waitError: false}
 
 		_, err := r.send(mp)
 
 		require.Equal(t, errors.New("Discord API error: Response error"), err, "respError error failed")
 	})
 
+	t.Run("ratelimit.Wait error", func(t *testing.T) {
+		r := Request{Messages: []Message{{Content: "Ok"}}, URL: "https://discord.com/api/webhooks/"}
+		mp := mockedPoster{postError: false, respError: false, waitError: true}
+
+		_, err := r.send(mp)
+
+		require.IsType(t, &strconv.NumError{}, err, "respError error failed")
+	})
+
 	t.Run("Success", func(t *testing.T) {
 		r := Request{Messages: []Message{{Content: "Ok"}}, URL: "https://discord.com/api/webhooks/"}
-		mp := mockedPoster{postError: false, respError: false}
+		mp := mockedPoster{postError: false, respError: false, waitError: false}
 
 		_, err := r.send(mp)
 
