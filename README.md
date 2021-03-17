@@ -25,30 +25,31 @@ import "github.com/qiyihuang/messenger"
 ```go
 package main
 
-import (
-    "fmt"
+import "github.com/qiyihuang/messenger"
 
-    "github.com/qiyihuang/messenger"
-)
 
 func main() {
     request := messenger.Request{
-        Msg: messenger.Message{
-            Username: "Webhook username",
-            Content:  "Hi content.",
-            Embeds: []messenger.Embed{
-                // More fields please check exposed struct and Discord API
-                {Title: "Embed 1", Description: "Embed description 1"},
-                {Title: "Embed 2", Description: "Embed description 2"},
+        Messages: []messenger.Message{
+            {
+                Username: "Webhook username",
+                Content:  "Message 1",
+                Embeds: []messenger.Embed{
+                    // More fields please check exposed struct and Discord API
+                    {Title: "Embed 1", Description: "Embed description 1"},
+                },
+            },
+            {
+                Username: "Webhook username",
+                Content: "Message 2",
             },
         },
         URL: "https://discord.com/api/webhooks/...",
     }
 
-    resp, err := messenger.Send(request)
+    responses, err := messenger.Send(request)
     if err != nil {
         // Handle error.
-        fmt.Print(err)
     }
 
     // Continue...
