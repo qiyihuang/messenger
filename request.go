@@ -13,8 +13,8 @@ import (
 
 // Request stores Discord webhook request information
 type Request struct {
-	Messages []Message
-	URL      string
+	Messages []Message // Slice of Discord messages
+	URL      string    // Discord webhook url
 }
 
 var post = http.Post
@@ -48,8 +48,8 @@ func respError(resp *http.Response) error {
 	return nil
 }
 
-// Send sends message by http post to Discord. Pass nil to hp to use default
-// http.DefaultClinet.
+// Send sends the request to Discord webhook url via http post. Request is
+// validated and send speed adjusted by rate limiter.
 func (r Request) Send() (responses []*http.Response, err error) {
 	err = validateRequest(r)
 	if err != nil {
