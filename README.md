@@ -1,6 +1,6 @@
 # Messenger
 
-Messenger is a library for sending Discord webhook. It can send single or multiple (WIP) messages to the same webhook address while complying with Discord's dynamic rate limiting (Channel and global limit cannot be detected by library so it's the user's responsibility to manage).
+Messenger is a library for sending Discord webhook. It sends messages to the a webhook address while complying with Discord's dynamic rate limiting (Channel and global limit is user's responsibility to manage since they cannot be detected by this library).
 
 ## Getting started
 
