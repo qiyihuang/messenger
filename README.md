@@ -47,7 +47,7 @@ func main() {
         URL: "https://discord.com/api/webhooks/...",
     }
 
-    responses, err := messenger.Send(request)
+    responses, err := request.Send()
     if err != nil {
         // Handle error.
     }
