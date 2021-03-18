@@ -1,7 +1,6 @@
 package ratelimit
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -24,7 +23,6 @@ func Wait(header http.Header) (err error) {
 
 	r, err := strconv.Atoi(remaining)
 	if err != nil || r > 0 {
-		fmt.Print(err)
 		return
 	}
 
