@@ -34,7 +34,11 @@ func formatBody(msg Message) io.Reader {
 func respError(resp *http.Response) error {
 	var respBody map[string]interface{}
 	err := json.NewDecoder(resp.Body).Decode(&respBody)
-	if err != nil {
+	switch {
+	// Body is empty.
+	case err == io.EOF:
+		return nil
+	case err != nil:
 		return err
 	}
 

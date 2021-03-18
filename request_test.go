@@ -42,14 +42,25 @@ func TestRespError(t *testing.T) {
 		require.Equal(t, errors.New("Discord API error: test"), err, "Has error in response failed")
 	})
 
-	t.Run("Decode error", func(t *testing.T) {
+	t.Run("Decode return if EOF", func(t *testing.T) {
 		rr := httptest.NewRecorder()
 		// Write empty body to trigger decode EOF error.
 		rr.Write(nil)
 
 		err := respError(rr.Result())
 
-		require.Equal(t, errors.New("EOF"), err, "Decode error failed")
+		require.IsType(t, nil, err, "Decode return if EOF failed")
+	})
+
+	t.Run("Decode error", func(t *testing.T) {
+		body, _ := json.Marshal(1)
+		rr := httptest.NewRecorder()
+		// Write empty body to trigger decode EOF error.
+		rr.Write(body)
+
+		err := respError(rr.Result())
+
+		require.IsType(t, &json.UnmarshalTypeError{}, err, "Decode error failed")
 	})
 
 	t.Run("No error", func(t *testing.T) {
