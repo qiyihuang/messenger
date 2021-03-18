@@ -17,10 +17,7 @@ type Request struct {
 	URL      string
 }
 
-// httpPoster sends http POST requests. e.g. http.Client
-type httpPoster interface {
-	Post(url string, contentType string, body io.Reader) (*http.Response, error)
-}
+var post = http.Post
 
 // formatBody serialises Message.
 func formatBody(msg Message) io.Reader {
@@ -51,8 +48,9 @@ func respError(resp *http.Response) error {
 	return nil
 }
 
-// send sends the message to Discord via http.
-func (r Request) send(p httpPoster) (responses []*http.Response, err error) {
+// Send sends message by http post to Discord. Pass nil to hp to use default
+// http.DefaultClinet.
+func (r Request) Send() (responses []*http.Response, err error) {
 	err = validateRequest(r)
 	if err != nil {
 		return
@@ -61,7 +59,7 @@ func (r Request) send(p httpPoster) (responses []*http.Response, err error) {
 	for _, msg := range r.Messages {
 		body := formatBody(msg)
 		var resp *http.Response
-		resp, err = p.Post(r.URL, "application/json", body)
+		resp, err = post(r.URL, "application/json", body)
 		if err != nil {
 			return
 		}
