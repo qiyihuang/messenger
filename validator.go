@@ -5,21 +5,18 @@ import (
 	"strings"
 )
 
-// These are all the length limit Discord API enforce on webhook message.
+// Limits Discord API enforces on webhook message.
 const (
-	webhookEmbedsLimit = 10
-
-	contentLimit = 2000
-
-	embedTotalLimit       = 6000
-	embedTitleLimit       = 256
-	embedDescriptionLimit = 2048
-	embedFieldsLimit      = 25
-	embedAuthorNameLimit  = 256
-	embedFooterTextLimit  = 2048
-
-	fieldNameLimit  = 256
-	fieldValueLimit = 1024
+	MessageEmbedNumLimit  = 10
+	MessageContentLimit   = 2000
+	EmbedTotalLimit       = 6000
+	EmbedTitleLimit       = 256
+	EmbedDescriptionLimit = 2048
+	EmbedFieldNumLimit    = 25
+	AuthorNameLimit       = 256
+	FieldNameLimit        = 256
+	FieldValueLimit       = 1024
+	FooterTextLimit       = 2048
 )
 
 func limitError(field string) error {
@@ -31,7 +28,7 @@ func validateFooter(f Footer) error {
 		return errors.New("Footer text is required")
 	}
 
-	if len(f.Text) > embedFooterTextLimit {
+	if len(f.Text) > FooterTextLimit {
 		return limitError("Embed footer text")
 	}
 
@@ -43,11 +40,11 @@ func validateField(f Field, embedLength *int) error {
 		return errors.New("Field name and value are required")
 	}
 
-	if len(f.Name) > fieldNameLimit {
+	if len(f.Name) > FieldNameLimit {
 		return limitError("Field name")
 	}
 
-	if len(f.Value) > fieldValueLimit {
+	if len(f.Value) > FieldValueLimit {
 		return limitError("Field value")
 	}
 
@@ -55,7 +52,7 @@ func validateField(f Field, embedLength *int) error {
 	*embedLength += len(f.Name)
 	*embedLength += len(f.Value)
 
-	if *embedLength > embedTotalLimit {
+	if *embedLength > EmbedTotalLimit {
 		return limitError("Embed total")
 	}
 
@@ -65,17 +62,17 @@ func validateField(f Field, embedLength *int) error {
 func validateEmbed(e Embed) error {
 	var embedLength int
 
-	if len(e.Title) > embedTitleLimit {
+	if len(e.Title) > EmbedTitleLimit {
 		return limitError("Embed title")
 	}
 	embedLength += len(e.Title)
 
-	if len(e.Description) > embedDescriptionLimit {
+	if len(e.Description) > EmbedDescriptionLimit {
 		return limitError("Embed description")
 	}
 	embedLength += len(e.Description)
 
-	if len(e.Author.Name) > embedAuthorNameLimit {
+	if len(e.Author.Name) > AuthorNameLimit {
 		return limitError("Embed author name")
 	}
 	embedLength += len(e.Author.Name)
@@ -89,7 +86,7 @@ func validateEmbed(e Embed) error {
 		embedLength += len(e.Footer.Text)
 	}
 
-	if len(e.Fields) > embedFieldsLimit {
+	if len(e.Fields) > EmbedFieldNumLimit {
 		return limitError("Embed field number")
 	}
 
@@ -120,11 +117,11 @@ func validateMessage(m Message) error {
 		return errors.New("Message must have either content or embeds")
 	}
 
-	if len(m.Content) > contentLimit {
+	if len(m.Content) > MessageContentLimit {
 		return limitError("Message content")
 	}
 
-	if len(m.Embeds) > webhookEmbedsLimit {
+	if len(m.Embeds) > MessageEmbedNumLimit {
 		return limitError("Message embed number")
 	}
 

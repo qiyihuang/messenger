@@ -1,6 +1,6 @@
 # Messenger
 
-Messenger is a library for sending Discord webhook. It can send single or multiple (WIP) messages to the same webhook address while complying with Discord's dynamic rate limiting (Channel and global limit cannot be detected by library so it's the user's responsibility to manage).
+Messenger is a library for sending Discord webhook. It sends messages to the a webhook address while complying with Discord's dynamic rate limiting (Channel and global limit is user's responsibility to manage since they cannot be detected by this library).
 
 ## Getting started
 
@@ -47,11 +47,30 @@ func main() {
         URL: "https://discord.com/api/webhooks/...",
     }
 
-    responses, err := messenger.Send(request)
+    responses, err := request.Send()
     if err != nil {
         // Handle error.
     }
 
     // Continue...
 }
+```
+
+### Discord message limits
+
+Use constants provided when you need to manage message limits.
+
+```go
+const (
+    MessageEmbedNumLimit  = 10
+    MessageContentLimit   = 2000
+    EmbedTotalLimit       = 6000
+    EmbedTitleLimit       = 256
+    EmbedDescriptionLimit = 2048
+    EmbedFieldNumLimit    = 25
+    AuthorNameLimit       = 256
+    FieldNameLimit        = 256
+    FieldValueLimit       = 1024
+    FooterTextLimit       = 2048
+)
 ```
