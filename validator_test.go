@@ -28,7 +28,7 @@ func TestValidateFooter(t *testing.T) {
 	})
 
 	t.Run("Embed footer limit", func(t *testing.T) {
-		footer := Footer{Text: strings.Repeat("t", embedFooterTextLimit+1)}
+		footer := Footer{Text: strings.Repeat("t", FooterTextLimit+1)}
 
 		err := validateFooter(footer)
 
@@ -64,7 +64,7 @@ func TestValidateField(t *testing.T) {
 	})
 
 	t.Run("Field name limit", func(t *testing.T) {
-		field := Field{Name: strings.Repeat("t", fieldNameLimit+1), Value: "Ok"}
+		field := Field{Name: strings.Repeat("t", FieldNameLimit+1), Value: "Ok"}
 		length := 1
 
 		err := validateField(field, &length)
@@ -73,7 +73,7 @@ func TestValidateField(t *testing.T) {
 	})
 
 	t.Run("Field value limit", func(t *testing.T) {
-		field := Field{Name: "Ok", Value: strings.Repeat("t", fieldValueLimit+1)}
+		field := Field{Name: "Ok", Value: strings.Repeat("t", FieldValueLimit+1)}
 		length := 1
 
 		err := validateField(field, &length)
@@ -95,7 +95,7 @@ func TestValidateField(t *testing.T) {
 
 	t.Run("Embed total limit", func(t *testing.T) {
 		field := Field{Name: "Ok", Value: "Ok"}
-		length := embedTotalLimit + 1
+		length := EmbedTotalLimit + 1
 
 		err := validateField(field, &length)
 
@@ -114,7 +114,7 @@ func TestValidateField(t *testing.T) {
 
 func TestValidateEmbed(t *testing.T) {
 	t.Run("Embed title limit", func(t *testing.T) {
-		embed := Embed{Title: strings.Repeat("t", embedTitleLimit+1)}
+		embed := Embed{Title: strings.Repeat("t", EmbedTitleLimit+1)}
 
 		err := validateEmbed(embed)
 
@@ -122,7 +122,7 @@ func TestValidateEmbed(t *testing.T) {
 	})
 
 	t.Run("Embed description limit", func(t *testing.T) {
-		embed := Embed{Description: strings.Repeat("t", embedDescriptionLimit+1)}
+		embed := Embed{Description: strings.Repeat("t", EmbedDescriptionLimit+1)}
 
 		err := validateEmbed(embed)
 
@@ -130,7 +130,7 @@ func TestValidateEmbed(t *testing.T) {
 	})
 
 	t.Run("Embed author name limit", func(t *testing.T) {
-		embed := Embed{Author: Author{Name: strings.Repeat("t", embedAuthorNameLimit+1)}}
+		embed := Embed{Author: Author{Name: strings.Repeat("t", AuthorNameLimit+1)}}
 
 		err := validateEmbed(embed)
 
@@ -241,7 +241,7 @@ func TestValidateMessage(t *testing.T) {
 	})
 
 	t.Run("Content limit", func(t *testing.T) {
-		msg := Message{Content: strings.Repeat("t", contentLimit+1)}
+		msg := Message{Content: strings.Repeat("t", MessageContentLimit+1)}
 
 		err := validateMessage(msg)
 
@@ -258,7 +258,7 @@ func TestValidateMessage(t *testing.T) {
 	})
 
 	t.Run("Validate embeds", func(t *testing.T) {
-		embeds := []Embed{{}, {Title: strings.Repeat("t", embedTitleLimit+1)}}
+		embeds := []Embed{{}, {Title: strings.Repeat("t", EmbedTitleLimit+1)}}
 		msg := Message{Embeds: embeds}
 
 		err := validateMessage(msg)
