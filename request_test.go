@@ -8,10 +8,72 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
+
+func TestCountEmbed(t *testing.T) {
+	var total int16 = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8
+	embed := Embed{
+		Title:       strings.Repeat("t", 1),
+		Description: strings.Repeat("t", 2),
+		Author:      Author{Name: strings.Repeat("t", 3)},
+		Footer:      Footer{Text: strings.Repeat("t", 4)},
+		Fields: []Field{
+			{Name: strings.Repeat("t", 5), Value: strings.Repeat("t", 6)},
+			{Name: strings.Repeat("t", 7), Value: strings.Repeat("t", 8)},
+		},
+	}
+
+	count := countEmbed(embed)
+
+	require.Equal(t, total, count, "CountEmbed failed")
+}
+
+func TestDivideMessage(t *testing.T) {
+	t.Run("Number of messages", func(t *testing.T) {
+		expectedNumber := 4 // 3 for embeds1, 1 for embeds2.
+		embeds1 := []Embed{
+			{Description: strings.Repeat("t", 1000)},
+			{Description: strings.Repeat("e", 2000)},
+			{Description: strings.Repeat("s", 3000)},
+			{Description: strings.Repeat("t", 4000)},
+			{Description: strings.Repeat("t", 4000)},
+		}
+		embeds2 := []Embed{
+			{Description: strings.Repeat("t", 1000)},
+			{Description: strings.Repeat("t", 4000)},
+		}
+		msgs := []Message{
+			{Username: "t", Content: "test", Embeds: embeds1},
+			{Username: "t", Content: "test", Embeds: embeds2},
+		}
+
+		dividedMsgs := divideMessages(msgs)
+
+		require.Equal(t, expectedNumber, len(dividedMsgs), "Number of messages failed")
+	})
+
+	t.Run("Content in only 1 message", func(t *testing.T) {
+		content := "test"
+		embeds := []Embed{
+			{Description: strings.Repeat("t", 4000)},
+			{Description: strings.Repeat("e", 4000)},
+			{Description: strings.Repeat("s", 4000)},
+		}
+		msgs := []Message{
+			{Username: "t", Content: content, Embeds: embeds},
+		}
+
+		dividedMsgs := divideMessages(msgs)
+
+		require.Equal(t, content, dividedMsgs[0].Content, "Content in first message failed")
+		require.Equal(t, "", dividedMsgs[1].Content, "Content in second message failed")
+		require.Equal(t, "", dividedMsgs[2].Content, "Content in third message failed")
+	})
+}
 
 func TestFormatBody(t *testing.T) {
 	t.Run("No error", func(t *testing.T) {
