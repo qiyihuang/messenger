@@ -7,6 +7,8 @@ import (
 
 // Limits Discord API enforces on webhook message.
 const (
+	// This library automatically divide message into smaller messages if it
+	// exceeds the number of embed and embed total character limits.
 	MessageEmbedNumLimit = 10
 	MessageContentLimit  = 2000
 	// Although not mentioned in documentation, in testings this limit seems
