@@ -58,19 +58,4 @@ func main() {
 
 ### Discord message limits
 
-Use constants provided when you need to manage message limits.
-
-```go
-const (
-    MessageEmbedNumLimit  = 10
-    MessageContentLimit   = 2000
-    EmbedTotalLimit       = 6000
-    EmbedTitleLimit       = 256
-    EmbedDescriptionLimit = 2048
-    EmbedFieldNumLimit    = 25
-    AuthorNameLimit       = 256
-    FieldNameLimit        = 256
-    FieldValueLimit       = 1024
-    FooterTextLimit       = 2048
-)
-```
+Use [provided constants](https://pkg.go.dev/github.com/qiyihuang/messenger#pkg-constants) when you need to manage message limits.
