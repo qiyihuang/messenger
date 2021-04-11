@@ -29,24 +29,28 @@ func countEmbed(e Embed) int16 {
 	return int16Total
 }
 
+func divideEmbeds(msg Message) (dividedEmbeds [][]Embed) {
+	var total int16
+	startIndex := 0
+	for i, e := range msg.Embeds {
+		count := countEmbed(e)
+		total += count
+		if total > EmbedTotalLimit {
+			dividedEmbeds = append(dividedEmbeds, msg.Embeds[startIndex:i])
+			startIndex = i
+			total = count
+		}
+	}
+	// Add the last chunk.
+	dividedEmbeds = append(dividedEmbeds, msg.Embeds[startIndex:])
+	return
+}
+
 // divideMessages breaks message into multiple messages depending on embed total
 // character count and number of embeds.
 func divideMessages(messages []Message) (msgs []Message) {
 	for _, msg := range messages {
-		var total int16
-		var dividedEmbeds [][]Embed
-		startIndex := 0
-		for i, e := range msg.Embeds {
-			count := countEmbed(e)
-			total += count
-			if total > EmbedTotalLimit {
-				dividedEmbeds = append(dividedEmbeds, msg.Embeds[startIndex:i])
-				startIndex = i
-				total = count
-			}
-		}
-		// Add the last chunk.
-		dividedEmbeds = append(dividedEmbeds, msg.Embeds[startIndex:])
+		dividedEmbeds := divideEmbeds(msg)
 
 		// Create message for every embed chunk.
 		for i, embeds := range dividedEmbeds {
@@ -95,12 +99,13 @@ func respError(resp *http.Response) error {
 // Send sends the request to Discord webhook url via http post. Request is
 // validated and send speed adjusted by rate limiter.
 func (r Request) Send() (responses []*http.Response, err error) {
+	r.Messages = divideMessages(r.Messages)
+
 	err = validateRequest(r)
 	if err != nil {
 		return
 	}
 
-	r.Messages = divideMessages(r.Messages)
 	for _, msg := range r.Messages {
 		body := formatBody(msg)
 		var resp *http.Response

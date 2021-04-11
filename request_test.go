@@ -32,9 +32,9 @@ func TestCountEmbed(t *testing.T) {
 	require.Equal(t, total, count, "CountEmbed failed")
 }
 
-func TestDivideMessage(t *testing.T) {
-	t.Run("Number of messages", func(t *testing.T) {
-		expectedNumber := 4 // 3 for embeds1, 1 for embeds2.
+func TestDivideEmbeds(t *testing.T) {
+	t.Run("Number of embeds chunks", func(t *testing.T) {
+		expectedNumber := 3 //1000 + 2000 + 3000, 4000, 4000
 		embeds1 := []Embed{
 			{Description: strings.Repeat("t", 1000)},
 			{Description: strings.Repeat("e", 2000)},
@@ -42,20 +42,15 @@ func TestDivideMessage(t *testing.T) {
 			{Description: strings.Repeat("t", 4000)},
 			{Description: strings.Repeat("t", 4000)},
 		}
-		embeds2 := []Embed{
-			{Description: strings.Repeat("t", 1000)},
-			{Description: strings.Repeat("t", 4000)},
-		}
-		msgs := []Message{
-			{Username: "t", Content: "test", Embeds: embeds1},
-			{Username: "t", Content: "test", Embeds: embeds2},
-		}
+		msg := Message{Username: "t", Content: "test", Embeds: embeds1}
 
-		dividedMsgs := divideMessages(msgs)
+		dividedEmbeds := divideEmbeds(msg)
 
-		require.Equal(t, expectedNumber, len(dividedMsgs), "Number of messages failed")
+		require.Equal(t, expectedNumber, len(dividedEmbeds), "Number of embeds chunks failed")
 	})
+}
 
+func TestDivideMessages(t *testing.T) {
 	t.Run("Content in only 1 message", func(t *testing.T) {
 		content := "test"
 		embeds := []Embed{
