@@ -33,20 +33,42 @@ func TestCountEmbed(t *testing.T) {
 }
 
 func TestDivideEmbeds(t *testing.T) {
-	t.Run("Number of embeds chunks", func(t *testing.T) {
+	t.Run("Divide by embed character limit", func(t *testing.T) {
 		expectedNumber := 3 //1000 + 2000 + 3000, 4000, 4000
-		embeds1 := []Embed{
+		embeds := []Embed{
 			{Description: strings.Repeat("t", 1000)},
 			{Description: strings.Repeat("e", 2000)},
 			{Description: strings.Repeat("s", 3000)},
 			{Description: strings.Repeat("t", 4000)},
 			{Description: strings.Repeat("t", 4000)},
 		}
-		msg := Message{Username: "t", Content: "test", Embeds: embeds1}
+		msg := Message{Username: "t", Content: "test", Embeds: embeds}
 
 		dividedEmbeds := divideEmbeds(msg)
 
-		require.Equal(t, expectedNumber, len(dividedEmbeds), "Number of embeds chunks failed")
+		require.Equal(t, expectedNumber, len(dividedEmbeds), "Divide by embed character limit failed")
+	})
+
+	t.Run("Divide by embed number", func(t *testing.T) {
+		expectedNumber := 2
+		embeds := []Embed{
+			{Description: "t"},
+			{Description: "t"},
+			{Description: "t"},
+			{Description: "t"},
+			{Description: "t"},
+			{Description: "t"},
+			{Description: "t"},
+			{Description: "t"},
+			{Description: "t"},
+			{Description: "t"},
+			{Description: "t"},
+		}
+		msg := Message{Username: "t", Content: "test", Embeds: embeds}
+
+		dividedEmbeds := divideEmbeds(msg)
+
+		require.Equal(t, expectedNumber, len(dividedEmbeds), "Divide by embed number failed")
 	})
 }
 
