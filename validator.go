@@ -16,7 +16,7 @@ const (
 	// webhook message (excludes characters in "Content").
 	EmbedTotalLimit       = 6000
 	EmbedTitleLimit       = 256
-	EmbedDescriptionLimit = 2048
+	EmbedDescriptionLimit = 4096
 	EmbedFieldNumLimit    = 25
 	AuthorNameLimit       = 256
 	FieldNameLimit        = 256
