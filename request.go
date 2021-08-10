@@ -35,7 +35,8 @@ func divideEmbeds(msg Message) (dividedEmbeds [][]Embed) {
 	for i, e := range msg.Embeds {
 		count := countEmbed(e)
 		total += count
-		if total > EmbedTotalLimit || i > MessageEmbedNumLimit-1 {
+		// i will be included in next chunk.
+		if total > EmbedTotalLimit || i-startIndex == MessageEmbedNumLimit {
 			dividedEmbeds = append(dividedEmbeds, msg.Embeds[startIndex:i])
 			startIndex = i
 			total = count

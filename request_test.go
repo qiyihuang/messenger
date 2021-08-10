@@ -34,13 +34,14 @@ func TestCountEmbed(t *testing.T) {
 
 func TestDivideEmbeds(t *testing.T) {
 	t.Run("Divide by embed character limit", func(t *testing.T) {
-		expectedNumber := 3 //1000 + 2000 + 3000, 4000, 4000
+		expectedNumber := 3 //1000 + 2000 + 3000, 3000, 4000 + 2000
 		embeds := []Embed{
 			{Description: strings.Repeat("t", 1000)},
 			{Description: strings.Repeat("e", 2000)},
 			{Description: strings.Repeat("s", 3000)},
+			{Description: strings.Repeat("t", 3000)},
 			{Description: strings.Repeat("t", 4000)},
-			{Description: strings.Repeat("t", 4000)},
+			{Description: strings.Repeat("t", 2000)},
 		}
 		msg := Message{Username: "t", Content: "test", Embeds: embeds}
 
@@ -50,8 +51,18 @@ func TestDivideEmbeds(t *testing.T) {
 	})
 
 	t.Run("Divide by embed number", func(t *testing.T) {
-		expectedNumber := 2
-		embeds := []Embed{
+		expectedNumber := 3
+		embeds := []Embed{ // 21 embeds
+			{Description: "t"},
+			{Description: "t"},
+			{Description: "t"},
+			{Description: "t"},
+			{Description: "t"},
+			{Description: "t"},
+			{Description: "t"},
+			{Description: "t"},
+			{Description: "t"},
+			{Description: "t"},
 			{Description: "t"},
 			{Description: "t"},
 			{Description: "t"},
