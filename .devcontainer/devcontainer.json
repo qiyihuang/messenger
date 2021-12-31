@@ -1,0 +1,15 @@
+{
+  "name": "messenger",
+  "image": "mcr.microsoft.com/vscode/devcontainers/go:latest",
+  "runArgs": ["--name=dev-messenger"],
+  "extensions": [
+    "golang.go",
+    "codezombiech.gitignore",
+    "aaron-bond.better-comments",
+    "ms-azuretools.vscode-docker",
+    "davidanson.vscode-markdownlint",
+  ],
+  "features": {
+    "github-cli": "latest"
+  }
+}
