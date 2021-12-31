@@ -8,7 +8,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/qiyihuang/messenger/pkg/ratelimit"
+	"github.com/qiyihuang/messenger/ratelimit"
 )
 
 // Request stores Discord webhook request information
