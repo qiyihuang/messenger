@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/qiyihuang/messenger/ratelimit"
 )
+
+var post = http.Post
 
 // Request stores Discord webhook request information
 type Request struct {
@@ -17,21 +18,46 @@ type Request struct {
 	URL      string    // Discord webhook url
 }
 
-var post = http.Post
+// Send sends the request to Discord webhook url via http post. Request is
+// validated and send speed adjusted by rate limiter.
+func (r Request) Send() ([]*http.Response, error) {
+	r.Messages = divideMessages(r.Messages)
+	if err := validateRequest(r); err != nil {
+		return nil, err
+	}
 
-func countEmbed(e Embed) int16 {
+	var responses []*http.Response
+	for _, msg := range r.Messages {
+		resp, err := post(r.URL, "application/json", formatBody(msg))
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+
+		if err := respError(resp); err != nil {
+			return nil, err
+		}
+
+		if err := ratelimit.Wait(resp.Header); err != nil {
+			return nil, err
+		}
+		responses = append(responses, resp)
+	}
+	return responses, nil
+}
+
+func countEmbed(e Embed) int {
 	total := len(e.Title) + len(e.Description) + len(e.Author.Name) + len(e.Footer.Text)
 	for _, field := range e.Fields {
 		total += len(field.Name)
 		total += len(field.Value)
 	}
-	int16Total := int16(total)
-	return int16Total
+	return total
 }
 
 func divideEmbeds(msg Message) (dividedEmbeds [][]Embed) {
-	var total int16
-	startIndex := 0
+	var total int
+	var startIndex int
 	for i, e := range msg.Embeds {
 		count := countEmbed(e)
 		total += count
@@ -39,6 +65,7 @@ func divideEmbeds(msg Message) (dividedEmbeds [][]Embed) {
 		if total > EmbedTotalLimit || i-startIndex == MessageEmbedNumLimit {
 			dividedEmbeds = append(dividedEmbeds, msg.Embeds[startIndex:i])
 			startIndex = i
+			// Set current count to initial total of next message.
 			total = count
 		}
 	}
@@ -52,7 +79,6 @@ func divideEmbeds(msg Message) (dividedEmbeds [][]Embed) {
 func divideMessages(messages []Message) (msgs []Message) {
 	for _, msg := range messages {
 		dividedEmbeds := divideEmbeds(msg)
-
 		// Create message for every embed chunk.
 		for i, embeds := range dividedEmbeds {
 			// First message contains content from original message.
@@ -60,11 +86,9 @@ func divideMessages(messages []Message) (msgs []Message) {
 			if i == 0 {
 				content = msg.Content
 			}
-
 			msgs = append(msgs, Message{Username: msg.Username, Embeds: embeds, Content: content})
 		}
 	}
-
 	return msgs
 }
 
@@ -73,8 +97,7 @@ func formatBody(msg Message) io.Reader {
 	// Marshal would never fail since Discord webhook message does not
 	// contain types not supported by Marshal.
 	jsonMsg, _ := json.Marshal(msg)
-	body := bytes.NewBuffer(jsonMsg)
-	return body
+	return bytes.NewBuffer(jsonMsg)
 }
 
 func respError(resp *http.Response) error {
@@ -88,46 +111,11 @@ func respError(resp *http.Response) error {
 		return err
 	}
 
-	//Discord API error message is written in "message" field in response body.
-	if message, ok := respBody["message"]; ok {
-		errMsg := "Discord API error: " + fmt.Sprintf("%v", message)
-		return errors.New(errMsg)
+	// Discord API error message is written in "message" field in response body.
+	// "message" field is always string. "https://discord.com/developers/docs/reference#error-messages"
+	if message, ok := respBody["message"].(string); ok {
+		return errors.New("Discord API error: " + message)
 	}
 
 	return nil
-}
-
-// Send sends the request to Discord webhook url via http post. Request is
-// validated and send speed adjusted by rate limiter.
-func (r Request) Send() (responses []*http.Response, err error) {
-	r.Messages = divideMessages(r.Messages)
-
-	err = validateRequest(r)
-	if err != nil {
-		return
-	}
-
-	for _, msg := range r.Messages {
-		body := formatBody(msg)
-		var resp *http.Response
-		resp, err = post(r.URL, "application/json", body)
-		if err != nil {
-			return
-		}
-
-		defer resp.Body.Close()
-		responses = append(responses, resp)
-
-		err = respError(resp)
-		if err != nil {
-			return
-		}
-
-		err = ratelimit.Wait(resp.Header)
-		if err != nil {
-			return
-		}
-	}
-
-	return
 }

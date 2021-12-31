@@ -9,7 +9,7 @@ import (
 // Wait analysis the response header from Discord to comply with their dynamic
 // rate limit.
 // IMPORTANT: the function cannot prevent "webhook message/channel/min" limit.
-func Wait(header http.Header) (err error) {
+func Wait(header http.Header) error {
 	// x-ratelimit-remaining contains the number of remaining quota.
 	remaining := header.Get("x-ratelimit-remaining")
 	// x-ratelimit-reset-after indicate the time (in sec) after which the limit
@@ -18,19 +18,18 @@ func Wait(header http.Header) (err error) {
 	// Discord sometimes respond w/o those headers.
 	// No headers, no limit.
 	if remaining == "" && resetAfter == "" {
-		return
+		return nil
 	}
 
-	r, err := strconv.Atoi(remaining)
-	if err != nil || r > 0 {
-		return
+	if r, err := strconv.Atoi(remaining); err != nil || r > 0 {
+		return err
 	}
 
 	wait, err := strconv.ParseFloat(resetAfter, 64)
 	if err != nil {
-		return
+		return err
 	}
 
 	time.Sleep(time.Duration(wait) * time.Second)
-	return
+	return nil
 }

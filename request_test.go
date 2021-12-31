@@ -15,7 +15,7 @@ import (
 )
 
 func TestCountEmbed(t *testing.T) {
-	var total int16 = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8
+	var total = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8
 	embed := Embed{
 		Title:       strings.Repeat("t", 1),
 		Description: strings.Repeat("t", 2),

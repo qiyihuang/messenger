@@ -56,7 +56,6 @@ func validateField(f Field, embedLength *int) error {
 	// Field name and value length is included in the embed total length
 	*embedLength += len(f.Name)
 	*embedLength += len(f.Value)
-
 	if *embedLength > EmbedTotalLimit {
 		return limitError("Embed total")
 	}
@@ -66,22 +65,21 @@ func validateField(f Field, embedLength *int) error {
 
 func validateEmbed(e Embed) error {
 	var embedLength int
-
 	if len(e.Title) > EmbedTitleLimit {
 		return limitError("Embed title")
 	}
-	embedLength += len(e.Title)
 
+	embedLength += len(e.Title)
 	if len(e.Description) > EmbedDescriptionLimit {
 		return limitError("Embed description")
 	}
-	embedLength += len(e.Description)
 
+	embedLength += len(e.Description)
 	if len(e.Author.Name) > AuthorNameLimit {
 		return limitError("Embed author name")
 	}
-	embedLength += len(e.Author.Name)
 
+	embedLength += len(e.Author.Name)
 	if e.Footer != (Footer{}) {
 		err := validateFooter(e.Footer)
 		if err != nil {
@@ -107,7 +105,7 @@ func validateEmbed(e Embed) error {
 
 // validateURL checks Discord webhook url validity.
 func validateURL(url string) error {
-	webhookPrefix := "https://discord.com/api/webhooks/"
+	const webhookPrefix = "https://discord.com/api/webhooks/"
 	if !strings.HasPrefix(url, webhookPrefix) {
 		return errors.New("URL invalid")
 	}
@@ -131,28 +129,24 @@ func validateMessage(m Message) error {
 	}
 
 	for _, embed := range m.Embeds {
-		err := validateEmbed(embed)
-		if err != nil {
+		if err := validateEmbed(embed); err != nil {
 			return err
 		}
 	}
-
 	return nil
 }
 
 // validateRequest calls validateURL and validateMessage to check validity of a Request.
-func validateRequest(r Request) (err error) {
-	err = validateURL(r.URL)
-	if err != nil {
-		return
+func validateRequest(r Request) error {
+	if err := validateURL(r.URL); err != nil {
+		return err
 	}
 
 	for _, msg := range r.Messages {
-		err = validateMessage(msg)
-		if err != nil {
-			return
+
+		if err := validateMessage(msg); err != nil {
+			return err
 		}
 	}
-
-	return
+	return nil
 }
