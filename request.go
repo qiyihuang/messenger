@@ -112,9 +112,9 @@ func respError(resp *http.Response) error {
 	}
 
 	// Discord API error message is written in "message" field in response body.
-	// "message" field is always string. "https://discord.com/developers/docs/reference#error-messages"
-	if message, ok := respBody["message"].(string); ok {
-		return errors.New("Discord API error: " + message)
+	// "message" is of string type. "https://discord.com/developers/docs/reference#error-messages"
+	if message, ok := respBody["message"]; ok {
+		return errors.New("Discord API error: " + message.(string))
 	}
 
 	return nil
