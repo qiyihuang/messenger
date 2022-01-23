@@ -138,15 +138,15 @@ func validateMessage(m Message) error {
 
 // validateRequest calls validateURL and validateMessage to check validity of a Request.
 func validateRequest(r request) error {
-	if err := validateURL(r.URL); err != nil {
+	if err := validateURL(r.url); err != nil {
 		return err
 	}
 
-	if len(r.Messages) == 0 {
+	if len(r.messages) == 0 {
 		return errors.New("request must have a least 1 message")
 	}
 
-	for _, msg := range r.Messages {
+	for _, msg := range r.messages {
 		if err := validateMessage(msg); err != nil {
 			return err
 		}

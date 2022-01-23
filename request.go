@@ -12,14 +12,14 @@ var post = http.Post
 
 // Request stores Discord webhook request information
 type request struct {
-	Messages []Message // Slice of Discord messages
-	URL      string    // Discord webhook url
+	messages []Message // Slice of Discord messages
+	url      string    // Discord webhook url
 }
 
 // NewRequest create a valid request.
 func NewRequest(messages []Message, url string) (*request, error) {
 	// Use pointer so we can return nil request, prevents caller to send invalid request.
-	req := &request{Messages: messages, URL: url}
+	req := &request{messages: messages, url: url}
 	if err := validateRequest(*req); err != nil {
 		return nil, err
 	}
@@ -30,11 +30,11 @@ func NewRequest(messages []Message, url string) (*request, error) {
 // Send sends the request to Discord webhook url via http post. Request is
 // validated and send speed adjusted by rate limiter.
 func (r *request) Send() ([]*http.Response, error) {
-	r.Messages = divideMessages(r.Messages)
+	r.messages = divideMessages(r.messages)
 
 	var responses []*http.Response
-	for _, msg := range r.Messages {
-		resp, err := post(r.URL, "application/json", formatBody(msg))
+	for _, msg := range r.messages {
+		resp, err := post(r.url, "application/json", formatBody(msg))
 		if err != nil {
 			return nil, err
 		}
