@@ -6,8 +6,6 @@ import (
 	"errors"
 	"io"
 	"net/http"
-
-	"github.com/qiyihuang/messenger/ratelimit"
 )
 
 var post = http.Post
@@ -46,7 +44,7 @@ func (r *request) Send() ([]*http.Response, error) {
 			return nil, err
 		}
 
-		if err := ratelimit.Wait(resp.Header); err != nil {
+		if err := handleRateLimit(resp.Header); err != nil {
 			return nil, err
 		}
 		responses = append(responses, resp)
