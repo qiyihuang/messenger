@@ -6,29 +6,34 @@ import (
 	"errors"
 	"io"
 	"net/http"
-
-	"github.com/qiyihuang/messenger/ratelimit"
 )
 
 var post = http.Post
 
 // Request stores Discord webhook request information
-type Request struct {
-	Messages []Message // Slice of Discord messages
-	URL      string    // Discord webhook url
+type request struct {
+	messages []Message // Slice of Discord messages
+	url      string    // Discord webhook url
 }
 
-// Send sends the request to Discord webhook url via http post. Request is
-// validated and send speed adjusted by rate limiter.
-func (r Request) Send() ([]*http.Response, error) {
-	r.Messages = divideMessages(r.Messages)
-	if err := validateRequest(r); err != nil {
+// NewRequest create a valid request.
+func NewRequest(messages []Message, url string) (*request, error) {
+	// Use pointer so we can return nil request, prevents caller to send invalid request.
+	req := &request{messages: messages, url: url}
+	if err := validateRequest(*req); err != nil {
 		return nil, err
 	}
 
+	return req, nil
+}
+
+// Send request to Discord webhook url via http post. Adjusted to the dynamic rate limit.
+func (r *request) Send() ([]*http.Response, error) {
+	r.messages = divideMessages(r.messages)
+
 	var responses []*http.Response
-	for _, msg := range r.Messages {
-		resp, err := post(r.URL, "application/json", formatBody(msg))
+	for _, msg := range r.messages {
+		resp, err := post(r.url, "application/json", formatBody(msg))
 		if err != nil {
 			return nil, err
 		}
@@ -38,7 +43,7 @@ func (r Request) Send() ([]*http.Response, error) {
 			return nil, err
 		}
 
-		if err := ratelimit.Wait(resp.Header); err != nil {
+		if err := handleRateLimit(resp.Header); err != nil {
 			return nil, err
 		}
 		responses = append(responses, resp)

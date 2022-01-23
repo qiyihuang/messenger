@@ -1,4 +1,4 @@
-package ratelimit
+package messenger
 
 import (
 	"net/http"
@@ -14,7 +14,7 @@ func TestWait(t *testing.T) {
 		header.Set("x-ratelimit-remaining", "")
 		header.Set("x-ratelimit-reset-after", "")
 
-		err := Wait(header)
+		err := handleRateLimit(header)
 
 		require.Equal(t, nil, err, "No limit failed")
 	})
@@ -24,7 +24,7 @@ func TestWait(t *testing.T) {
 		header.Set("x-ratelimit-remaining", "")
 		header.Set("x-ratelimit-reset-after", "something") // Avoid return by empty check
 
-		err := Wait(header)
+		err := handleRateLimit(header)
 
 		_, ok := err.(*strconv.NumError)
 		if !ok {
@@ -37,7 +37,7 @@ func TestWait(t *testing.T) {
 		header.Set("x-ratelimit-remaining", "1")
 		header.Set("x-ratelimit-reset-after", "")
 
-		err := Wait(header)
+		err := handleRateLimit(header)
 
 		require.Equal(t, nil, err, "Quota not exhausted failed")
 	})
@@ -47,7 +47,7 @@ func TestWait(t *testing.T) {
 		header.Set("x-ratelimit-remaining", "0")
 		header.Set("x-ratelimit-reset-after", "")
 
-		err := Wait(header)
+		err := handleRateLimit(header)
 
 		_, ok := err.(*strconv.NumError)
 		if !ok {
@@ -60,7 +60,7 @@ func TestWait(t *testing.T) {
 		header.Set("x-ratelimit-remaining", "0")
 		header.Set("x-ratelimit-reset-after", "0")
 
-		err := Wait(header)
+		err := handleRateLimit(header)
 
 		require.Equal(t, nil, err, "Return nil after sleep failed")
 	})

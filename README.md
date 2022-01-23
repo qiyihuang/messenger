@@ -1,24 +1,16 @@
 # Messenger
 
-Messenger is a library for sending Discord webhook. It sends messages to the a webhook address while complying with Discord's dynamic rate limiting (Channel and global limit is user's responsibility to manage since they cannot be detected by this library).
+Messenger sends messages to a Discord webhook address while complying with the dynamic rate limiting.
 
-## Getting started
+**There is no way the libray can manage rate limit imposed on channel and server, user need to manage these limit in these cases (e.g. other webhooks also post messages to the same channel).**
 
-### Installing
+## Usage
+
+### In go.mod
 
 ```bash
-go install github.com/qiyihuang/messenger
+require github.com/qiyihuang/messenger v0.4
 ```
-
-### Usage
-
-Import tha package into your project.
-
-```go
-import "github.com/qiyihuang/messenger"
-```
-
-## Examples
 
 ### Send a message
 
@@ -29,33 +21,36 @@ import "github.com/qiyihuang/messenger"
 
 
 func main() {
-    request := messenger.Request{
-        Messages: []messenger.Message{
+    msgs :=
+        []messenger.Message{
             {
                 Username: "Webhook username",
                 Content:  "Message 1",
                 Embeds: []messenger.Embed{
-                    // More fields please check exposed struct and Discord API
+                    // More fields please check go doc or Discord API.
                     {Title: "Embed 1", Description: "Embed description 1"},
                 },
             },
             {
                 Username: "Webhook username",
-                Content: "Message 2",
+                Content:  "Message 2",
             },
-        },
-        URL: "https://discord.com/api/webhooks/...",
-    }
-
-    responses, err := request.Send()
+        }
+    url := "https://discord.com/api/webhooks/..."
+    req, err := messenger.NewRequest(msgs, url)
     if err != nil {
-        // Handle error.
+        // handle when the request is invalid...
     }
 
-    // Continue...
+    resp, err := req.Send()
+    if err != nil {
+        // ...
+    }
+
+    // ...
 }
 ```
 
 ### Discord message limits
 
-Use [provided constants](https://pkg.go.dev/github.com/qiyihuang/messenger#pkg-constants) when you need to manage message limits.
+Use [these constants](https://pkg.go.dev/github.com/qiyihuang/messenger#pkg-constants) to manage message limits.

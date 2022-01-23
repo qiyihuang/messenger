@@ -1,4 +1,4 @@
-package ratelimit
+package messenger
 
 import (
 	"net/http"
@@ -6,10 +6,10 @@ import (
 	"time"
 )
 
-// Wait analysis the response header from Discord to comply with their dynamic
+// HandleRateLimit analysis the response header from Discord to comply with their dynamic
 // rate limit.
 // IMPORTANT: the function cannot prevent "webhook message/channel/min" limit.
-func Wait(header http.Header) error {
+func handleRateLimit(header http.Header) error {
 	// x-ratelimit-remaining contains the number of remaining quota.
 	remaining := header.Get("x-ratelimit-remaining")
 	// x-ratelimit-reset-after indicate the time (in sec) after which the limit
