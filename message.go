@@ -1,5 +1,12 @@
 package messenger
 
+// Message represents a webhook message.
+type Message struct {
+	Content  string  `json:"content,omitempty"`
+	Username string  `json:"username,omitempty"`
+	Embeds   []Embed `json:"embeds,omitempty"`
+}
+
 // Timestamp represents the timestamp string in an embed object.
 // Format timestamp using .UTC().Format("2006-01-02T15:04:05-0700"),
 // Discord will convert it to local time on display.
@@ -64,11 +71,4 @@ type Embed struct {
 	Video       Video     `json:"video,omitempty"`
 	Author      Author    `json:"author,omitempty"`
 	Fields      []Field   `json:"fields,omitempty"`
-}
-
-// Message represents a webhook message.
-type Message struct {
-	Content  string  `json:"content,omitempty"`
-	Username string  `json:"username,omitempty"`
-	Embeds   []Embed `json:"embeds,omitempty"`
 }

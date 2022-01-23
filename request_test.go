@@ -14,6 +14,92 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestNewRequest(t *testing.T) {
+	t.Run("error", func(t *testing.T) {
+		msgs := []Message{}
+		url := "https://discord.com/api/webhooks/something"
+
+		req, err := NewRequest(msgs, url)
+
+		require.Equal(t, (*request)(nil), req, "TestNewRequest error failed")
+		require.EqualError(t, err, "request must have a least 1 message")
+	})
+}
+
+func TestRequestSend(t *testing.T) {
+	// postError imitates error returned by http.Post
+	postError := func(url string, contentType string, body io.Reader) (*http.Response, error) {
+		return nil, errors.New("Post error")
+	}
+
+	// responseError imitates response with Discord error.
+	responseError := func(url string, contentType string, body io.Reader) (*http.Response, error) {
+		respBody := struct {
+			Message string `json:"message,omitempty"`
+		}{"Response error"}
+		jsonBody, _ := json.Marshal(respBody)
+		rr := httptest.NewRecorder()
+		rr.Write(jsonBody)
+		return rr.Result(), nil
+	}
+
+	// waitError imitates error thrown by ratelimit.Wait.
+	waitError := func(url string, contentType string, body io.Reader) (*http.Response, error) {
+		rr := httptest.NewRecorder()
+		header := rr.Header()
+		header.Add("x-ratelimit-remaining", "wrong")
+		header.Add("x-ratelimit-reset-after", "1")
+		respBody, _ := json.Marshal(struct{ Other string }{"Ok"})
+		rr.Write(respBody)
+		return rr.Result(), nil
+
+	}
+
+	// noError imitates successful response from http.Post.
+	noError := func(url string, contentType string, body io.Reader) (*http.Response, error) {
+		jsonBody, _ := json.Marshal(struct{ Message string }{"Ok"})
+		rr := httptest.NewRecorder()
+		rr.Write(jsonBody)
+		return rr.Result(), nil
+	}
+
+	t.Run("Post error", func(t *testing.T) {
+		r, _ := NewRequest([]Message{{Content: "Ok"}}, "https://discord.com/api/webhooks/")
+		post = postError
+
+		_, err := r.Send()
+
+		require.Equal(t, errors.New("Post error"), err, "Post error failed")
+	})
+
+	t.Run("respError error", func(t *testing.T) {
+		r, _ := NewRequest([]Message{{Content: "Ok"}}, "https://discord.com/api/webhooks/")
+		post = responseError
+
+		_, err := r.Send()
+
+		require.Equal(t, errors.New("Discord API error: Response error"), err, "respError error failed")
+	})
+
+	t.Run("ratelimit.Wait error", func(t *testing.T) {
+		r, _ := NewRequest([]Message{{Content: "Ok"}}, "https://discord.com/api/webhooks/")
+		post = waitError
+
+		_, err := r.Send()
+
+		require.IsType(t, &strconv.NumError{}, err, "respError error failed")
+	})
+
+	t.Run("Success", func(t *testing.T) {
+		r, _ := NewRequest([]Message{{Content: "Ok"}}, "https://discord.com/api/webhooks/")
+		post = noError
+
+		_, err := r.Send()
+
+		require.Equal(t, nil, err, "Success failed")
+	})
+}
+
 func TestCountEmbed(t *testing.T) {
 	var total = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8
 	embed := Embed{
@@ -162,95 +248,5 @@ func TestRespError(t *testing.T) {
 		err := respError(rr.Result())
 
 		require.Equal(t, nil, err, "Resp no error failed")
-	})
-}
-
-// postError imitates error returned by http.Post
-func postError(url string, contentType string, body io.Reader) (*http.Response, error) {
-	return nil, errors.New("Post error")
-}
-
-// responseError imitates response with Discord error.
-func responseError(url string, contentType string, body io.Reader) (*http.Response, error) {
-	respBody := struct {
-		Message string `json:"message,omitempty"`
-	}{"Response error"}
-	jsonBody, _ := json.Marshal(respBody)
-	rr := httptest.NewRecorder()
-	rr.Write(jsonBody)
-	return rr.Result(), nil
-}
-
-// waitError imitates error thrown by ratelimit.Wait.
-func waitError(url string, contentType string, body io.Reader) (*http.Response, error) {
-	rr := httptest.NewRecorder()
-	header := rr.Header()
-	header.Add("x-ratelimit-remaining", "wrong")
-	header.Add("x-ratelimit-reset-after", "1")
-	respBody, _ := json.Marshal(struct{ Other string }{"Ok"})
-	rr.Write(respBody)
-	return rr.Result(), nil
-
-}
-
-// noError imitates successful response from http.Post.
-func noError(url string, contentType string, body io.Reader) (*http.Response, error) {
-	jsonBody, _ := json.Marshal(struct{ Message string }{"Ok"})
-	rr := httptest.NewRecorder()
-	rr.Write(jsonBody)
-	return rr.Result(), nil
-}
-
-func TestRequestSend(t *testing.T) {
-	t.Run("validateURL error", func(t *testing.T) {
-		r := Request{Messages: []Message{{Content: "test"}}, URL: "wrong"}
-
-		_, err := r.Send()
-
-		require.Equal(t, errors.New("URL invalid"), err, "validateURL error failed")
-	})
-
-	t.Run("validateMessage error", func(t *testing.T) {
-		r := Request{Messages: []Message{{}}, URL: "https://discord.com/api/webhooks/"}
-
-		_, err := r.Send()
-
-		require.Equal(t, errors.New("Message must have either content or embeds"), err, "validateMessage error failed")
-	})
-
-	t.Run("Post error", func(t *testing.T) {
-		r := Request{Messages: []Message{{Content: "Ok"}}, URL: "https://discord.com/api/webhooks/"}
-		post = postError
-
-		_, err := r.Send()
-
-		require.Equal(t, errors.New("Post error"), err, "Post error failed")
-	})
-
-	t.Run("respError error", func(t *testing.T) {
-		r := Request{Messages: []Message{{Content: "Ok"}}, URL: "https://discord.com/api/webhooks/"}
-		post = responseError
-
-		_, err := r.Send()
-
-		require.Equal(t, errors.New("Discord API error: Response error"), err, "respError error failed")
-	})
-
-	t.Run("ratelimit.Wait error", func(t *testing.T) {
-		r := Request{Messages: []Message{{Content: "Ok"}}, URL: "https://discord.com/api/webhooks/"}
-		post = waitError
-
-		_, err := r.Send()
-
-		require.IsType(t, &strconv.NumError{}, err, "respError error failed")
-	})
-
-	t.Run("Success", func(t *testing.T) {
-		r := Request{Messages: []Message{{Content: "Ok"}}, URL: "https://discord.com/api/webhooks/"}
-		post = noError
-
-		_, err := r.Send()
-
-		require.Equal(t, nil, err, "Success failed")
 	})
 }

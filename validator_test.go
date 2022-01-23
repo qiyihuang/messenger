@@ -279,27 +279,38 @@ func TestValidateRequest(t *testing.T) {
 	t.Run("URL error", func(t *testing.T) {
 		msgs := []Message{{Content: "Ok"}}
 		url := "wrong"
-		req := Request{msgs, url}
+		req := request{msgs, url}
 
 		err := validateRequest(req)
 
-		require.Equal(t, errors.New("URL invalid"), err, "URL error failed")
+		require.EqualError(t, err, "URL invalid")
+	})
+
+	t.Run("No message", func(t *testing.T) {
+		msgs := []Message{}
+		url := "https://discord.com/api/webhooks/"
+		req := request{msgs, url}
+
+		err := validateRequest(req)
+
+		require.EqualError(t, err, "request must have a least 1 message")
+
 	})
 
 	t.Run("Message error", func(t *testing.T) {
 		msgs := []Message{{Content: "Ok"}, {}} // Failed on second make sure it loops.
 		url := "https://discord.com/api/webhooks/"
-		req := Request{msgs, url}
+		req := request{msgs, url}
 
 		err := validateRequest(req)
 
-		require.Equal(t, errors.New("Message must have either content or embeds"), err, "Message error failed")
+		require.EqualError(t, err, "Message must have either content or embeds")
 	})
 
 	t.Run("Pass", func(t *testing.T) {
 		msgs := []Message{{Content: "Ok"}}
 		url := "https://discord.com/api/webhooks/"
-		req := Request{msgs, url}
+		req := request{msgs, url}
 
 		err := validateRequest(req)
 

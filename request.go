@@ -13,18 +13,26 @@ import (
 var post = http.Post
 
 // Request stores Discord webhook request information
-type Request struct {
+type request struct {
 	Messages []Message // Slice of Discord messages
 	URL      string    // Discord webhook url
 }
 
-// Send sends the request to Discord webhook url via http post. Request is
-// validated and send speed adjusted by rate limiter.
-func (r Request) Send() ([]*http.Response, error) {
-	r.Messages = divideMessages(r.Messages)
-	if err := validateRequest(r); err != nil {
+// NewRequest create a valid request.
+func NewRequest(messages []Message, url string) (*request, error) {
+	// Use pointer so we can return nil request, prevents caller to send invalid request.
+	req := &request{Messages: messages, URL: url}
+	if err := validateRequest(*req); err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// Send sends the request to Discord webhook url via http post. Request is
+// validated and send speed adjusted by rate limiter.
+func (r *request) Send() ([]*http.Response, error) {
+	r.Messages = divideMessages(r.Messages)
 
 	var responses []*http.Response
 	for _, msg := range r.Messages {
