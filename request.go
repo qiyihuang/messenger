@@ -27,8 +27,7 @@ func NewRequest(messages []Message, url string) (*request, error) {
 	return req, nil
 }
 
-// Send sends the request to Discord webhook url via http post. Request is
-// validated and send speed adjusted by rate limiter.
+// Send request to Discord webhook url via http post. Adjusted to the dynamic rate limit.
 func (r *request) Send() ([]*http.Response, error) {
 	r.messages = divideMessages(r.messages)
 
