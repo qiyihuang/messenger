@@ -21,15 +21,18 @@ func handleRateLimit(header http.Header) error {
 		return nil
 	}
 
-	if r, err := strconv.Atoi(remaining); err != nil || r > 0 {
+	r, err := strconv.Atoi(remaining)
+	if err != nil {
 		return err
+	}
+	if r > 0 {
+		return nil
 	}
 
 	wait, err := strconv.ParseFloat(resetAfter, 64)
 	if err != nil {
 		return err
 	}
-
 	time.Sleep(time.Duration(wait) * time.Second)
 	return nil
 }
