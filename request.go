@@ -8,18 +8,17 @@ import (
 	"net/http"
 )
 
-var post = http.Post
-
 // Request stores Discord webhook request information
 type request struct {
 	messages []Message // Slice of Discord messages
 	url      string    // Discord webhook url
+	client   *http.Client
 }
 
 // NewRequest create a valid request.
-func NewRequest(messages []Message, url string) (*request, error) {
+func NewRequest(messages []Message, url string, clt *http.Client) (*request, error) {
 	// Use pointer so we can return nil request, prevents caller to send invalid request.
-	req := &request{messages: messages, url: url}
+	req := &request{messages: messages, url: url, client: clt}
 	if err := validateRequest(*req); err != nil {
 		return nil, err
 	}
@@ -33,7 +32,7 @@ func (r *request) Send() ([]*http.Response, error) {
 
 	var responses []*http.Response
 	for _, msg := range r.messages {
-		resp, err := post(r.url, "application/json", formatBody(msg))
+		resp, err := makeRequest(msg, r.url, r.client)
 		if err != nil {
 			return nil, err
 		}
@@ -49,6 +48,16 @@ func (r *request) Send() ([]*http.Response, error) {
 		responses = append(responses, resp)
 	}
 	return responses, nil
+}
+
+func makeRequest(msg Message, url string, clt *http.Client) (*http.Response, error) {
+	req, err := http.NewRequest("POST", url, formatBody(msg))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+	return clt.Do(req)
 }
 
 func countEmbed(e Embed) int {
