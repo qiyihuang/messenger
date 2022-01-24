@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -19,71 +18,58 @@ func TestNewRequest(t *testing.T) {
 		msgs := []Message{}
 		url := "https://discord.com/api/webhooks/something"
 
-		req, err := NewRequest(msgs, url)
+		req, err := NewRequest(msgs, url, http.DefaultClient)
 
 		require.Equal(t, (*request)(nil), req, "TestNewRequest error failed")
 		require.EqualError(t, err, "request must have a least 1 message")
 	})
+
+	t.Run("success", func(t *testing.T) {
+		msgs := []Message{{Content: "test"}}
+		url := "https://discord.com/api/webhooks/something"
+
+		_, err := NewRequest(msgs, url, http.DefaultClient)
+
+		require.NoError(t, err)
+	})
 }
 
 func TestRequestSend(t *testing.T) {
-	// postError imitates error returned by http.Post
-	postError := func(url string, contentType string, body io.Reader) (*http.Response, error) {
-		return nil, errors.New("Post error")
-	}
-
-	// responseError imitates response with Discord error.
-	responseError := func(url string, contentType string, body io.Reader) (*http.Response, error) {
-		respBody := struct {
-			Message string `json:"message,omitempty"`
-		}{"Response error"}
-		jsonBody, _ := json.Marshal(respBody)
-		rr := httptest.NewRecorder()
-		rr.Write(jsonBody)
-		return rr.Result(), nil
-	}
-
-	// waitError imitates error thrown by ratelimit.Wait.
-	waitError := func(url string, contentType string, body io.Reader) (*http.Response, error) {
-		rr := httptest.NewRecorder()
-		header := rr.Header()
-		header.Add("x-ratelimit-remaining", "wrong")
-		header.Add("x-ratelimit-reset-after", "1")
-		respBody, _ := json.Marshal(struct{ Other string }{"Ok"})
-		rr.Write(respBody)
-		return rr.Result(), nil
-
-	}
-
-	// noError imitates successful response from http.Post.
-	noError := func(url string, contentType string, body io.Reader) (*http.Response, error) {
-		jsonBody, _ := json.Marshal(struct{ Message string }{"Ok"})
-		rr := httptest.NewRecorder()
-		rr.Write(jsonBody)
-		return rr.Result(), nil
-	}
-
-	t.Run("Post error", func(t *testing.T) {
-		r, _ := NewRequest([]Message{{Content: "Ok"}}, "https://discord.com/api/webhooks/")
-		post = postError
+	t.Run("makeRequest error", func(t *testing.T) {
+		// %% will fail makeRequest
+		r := request{messages: []Message{{Content: "Ok"}}, url: "%%", client: http.DefaultClient}
 
 		_, err := r.Send()
 
-		require.Equal(t, errors.New("Post error"), err, "Post error failed")
+		require.Error(t, err)
 	})
 
 	t.Run("respError error", func(t *testing.T) {
-		r, _ := NewRequest([]Message{{Content: "Ok"}}, "https://discord.com/api/webhooks/")
-		post = responseError
+		// Return a payload containing error message
+		resp := make(map[string]string)
+		resp["message"] = "test error"
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			j, _ := json.Marshal(resp)
+			w.Write(j)
+		}))
+		defer server.Close()
+
+		r := request{messages: []Message{{Content: "Ok"}}, url: server.URL, client: http.DefaultClient}
 
 		_, err := r.Send()
 
-		require.Equal(t, errors.New("Discord API error: Response error"), err, "respError error failed")
+		require.Equal(t, errors.New("Discord API error: test error"), err, "respError error failed")
 	})
 
 	t.Run("ratelimit.Wait error", func(t *testing.T) {
-		r, _ := NewRequest([]Message{{Content: "Ok"}}, "https://discord.com/api/webhooks/")
-		post = waitError
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Add("x-ratelimit-remaining", "a") // trigger strconv error.
+		}))
+		defer server.Close()
+
+		r := request{messages: []Message{{Content: "Ok"}}, url: server.URL, client: http.DefaultClient}
 
 		_, err := r.Send()
 
@@ -91,12 +77,49 @@ func TestRequestSend(t *testing.T) {
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		r, _ := NewRequest([]Message{{Content: "Ok"}}, "https://discord.com/api/webhooks/")
-		post = noError
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+		defer server.Close()
+
+		r := request{messages: []Message{{Content: "Ok"}}, url: server.URL, client: http.DefaultClient}
 
 		_, err := r.Send()
 
-		require.Equal(t, nil, err, "Success failed")
+		require.NoError(t, err)
+	})
+}
+
+func TestMakeRequest(t *testing.T) {
+	t.Run("NewRequest error", func(t *testing.T) {
+		msg := Message{}
+		url := "%%" // This will make NewRequest failed
+		clt := &http.Client{}
+
+		resp, err := makeRequest(msg, url, clt)
+
+		require.Error(t, err)
+		require.Nil(t, resp)
+	})
+
+	t.Run("Do error", func(t *testing.T) {
+		msg := Message{}
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+		server.Close() // Close before req sent
+		clt := server.Client()
+
+		_, err := makeRequest(msg, server.URL, clt)
+
+		require.Error(t, err)
+	})
+
+	t.Run("No error", func(t *testing.T) {
+		msg := Message{Content: "hi"}
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+		defer server.Close()
+		clt := server.Client()
+
+		_, err := makeRequest(msg, server.URL, clt)
+
+		require.NoError(t, err)
 	})
 }
 

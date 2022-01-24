@@ -35,7 +35,7 @@ func TestWait(t *testing.T) {
 	t.Run("Quota not exhausted", func(t *testing.T) {
 		header := http.Header{}
 		header.Set("x-ratelimit-remaining", "1")
-		header.Set("x-ratelimit-reset-after", "")
+		header.Set("x-ratelimit-reset-after", "0")
 
 		err := handleRateLimit(header)
 
