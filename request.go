@@ -8,15 +8,20 @@ import (
 	"net/http"
 )
 
+// HttpClient represent standard library http compatible clients.
+type HttpClient interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
 // Request stores Discord webhook request information
 type request struct {
 	messages []Message // Slice of Discord messages
 	url      string    // Discord webhook url
-	client   *http.Client
+	client   HttpClient
 }
 
 // NewRequest create a valid request.
-func NewRequest(clt *http.Client, url string, messages []Message) (*request, error) {
+func NewRequest(clt HttpClient, url string, messages []Message) (*request, error) {
 	// Use pointer so we can return nil request, prevents caller to send invalid request.
 	req := &request{messages: messages, url: url, client: clt}
 	if err := validateRequest(*req); err != nil {
@@ -50,7 +55,7 @@ func (r *request) Send() ([]*http.Response, error) {
 	return responses, nil
 }
 
-func makeRequest(msg Message, url string, clt *http.Client) (*http.Response, error) {
+func makeRequest(msg Message, url string, clt HttpClient) (*http.Response, error) {
 	req, err := http.NewRequest("POST", url, formatBody(msg))
 	if err != nil {
 		return nil, err
