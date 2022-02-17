@@ -16,7 +16,7 @@ type request struct {
 }
 
 // NewRequest create a valid request.
-func NewRequest(messages []Message, url string, clt *http.Client) (*request, error) {
+func NewRequest(clt *http.Client, url string, messages []Message) (*request, error) {
 	// Use pointer so we can return nil request, prevents caller to send invalid request.
 	req := &request{messages: messages, url: url, client: clt}
 	if err := validateRequest(*req); err != nil {
