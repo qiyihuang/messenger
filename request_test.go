@@ -18,7 +18,7 @@ func TestNewRequest(t *testing.T) {
 		msgs := []Message{}
 		url := "https://discord.com/api/webhooks/something"
 
-		req, err := NewRequest(msgs, url, http.DefaultClient)
+		req, err := NewRequest(http.DefaultClient, url, msgs)
 
 		require.Equal(t, (*request)(nil), req, "TestNewRequest error failed")
 		require.EqualError(t, err, "request must have a least 1 message")
@@ -28,7 +28,7 @@ func TestNewRequest(t *testing.T) {
 		msgs := []Message{{Content: "test"}}
 		url := "https://discord.com/api/webhooks/something"
 
-		_, err := NewRequest(msgs, url, http.DefaultClient)
+		_, err := NewRequest(http.DefaultClient, url, msgs)
 
 		require.NoError(t, err)
 	})

@@ -17,10 +17,18 @@ require github.com/qiyihuang/messenger v0.4
 ```go
 package main
 
-import "github.com/qiyihuang/messenger"
+import (
+    "net/http"
+
+    "github.com/qiyihuang/messenger"
+)
 
 
 func main() {
+    client := &http.Client{
+        // Client config
+    }
+    url := "https://discord.com/api/webhooks/..."
     msgs :=
         []messenger.Message{
             {
@@ -36,8 +44,8 @@ func main() {
                 Content:  "Message 2",
             },
         }
-    url := "https://discord.com/api/webhooks/..."
-    req, err := messenger.NewRequest(msgs, url)
+
+    req, err := messenger.NewRequest(client, url, msgs)
     if err != nil {
         // handle when the request is invalid...
     }
