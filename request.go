@@ -14,16 +14,16 @@ type HttpClient interface {
 }
 
 // Request stores Discord webhook request information
-type request struct {
+type Request struct {
 	messages []Message // Slice of Discord messages
 	url      string    // Discord webhook url
 	client   HttpClient
 }
 
 // NewRequest create a valid request.
-func NewRequest(clt HttpClient, url string, messages []Message) (*request, error) {
+func NewRequest(clt HttpClient, url string, messages []Message) (*Request, error) {
 	// Use pointer so we can return nil request, prevents caller to send invalid request.
-	req := &request{messages: divideMessages(messages), url: url, client: clt}
+	req := &Request{messages: divideMessages(messages), url: url, client: clt}
 	if err := validateRequest(*req); err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func NewRequest(clt HttpClient, url string, messages []Message) (*request, error
 }
 
 // Send request to Discord webhook url via http post. Adjusted to the dynamic rate limit.
-func (r *request) Send() ([]*http.Response, error) {
+func (r *Request) Send() ([]*http.Response, error) {
 	var responses []*http.Response
 	for _, msg := range r.messages {
 		resp, err := makeRequest(msg, r.url, r.client)

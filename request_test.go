@@ -20,7 +20,7 @@ func TestNewRequest(t *testing.T) {
 
 		req, err := NewRequest(http.DefaultClient, url, msgs)
 
-		require.Equal(t, (*request)(nil), req, "TestNewRequest error failed")
+		require.Equal(t, (*Request)(nil), req, "TestNewRequest error failed")
 		require.EqualError(t, err, "request must have a least 1 message")
 	})
 
@@ -37,7 +37,7 @@ func TestNewRequest(t *testing.T) {
 func TestRequestSend(t *testing.T) {
 	t.Run("makeRequest error", func(t *testing.T) {
 		// %% will fail makeRequest
-		r := request{messages: []Message{{Content: "Ok"}}, url: "%%", client: http.DefaultClient}
+		r := Request{messages: []Message{{Content: "Ok"}}, url: "%%", client: http.DefaultClient}
 
 		_, err := r.Send()
 
@@ -56,7 +56,7 @@ func TestRequestSend(t *testing.T) {
 		}))
 		defer server.Close()
 
-		r := request{messages: []Message{{Content: "Ok"}}, url: server.URL, client: http.DefaultClient}
+		r := Request{messages: []Message{{Content: "Ok"}}, url: server.URL, client: http.DefaultClient}
 
 		_, err := r.Send()
 
@@ -69,7 +69,7 @@ func TestRequestSend(t *testing.T) {
 		}))
 		defer server.Close()
 
-		r := request{messages: []Message{{Content: "Ok"}}, url: server.URL, client: http.DefaultClient}
+		r := Request{messages: []Message{{Content: "Ok"}}, url: server.URL, client: http.DefaultClient}
 
 		_, err := r.Send()
 
@@ -80,7 +80,7 @@ func TestRequestSend(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 		defer server.Close()
 
-		r := request{messages: []Message{{Content: "Ok"}}, url: server.URL, client: http.DefaultClient}
+		r := Request{messages: []Message{{Content: "Ok"}}, url: server.URL, client: http.DefaultClient}
 
 		_, err := r.Send()
 
