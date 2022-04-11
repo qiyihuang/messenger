@@ -68,27 +68,22 @@ func validateEmbed(e Embed) error {
 	if len(e.Title) > EmbedTitleLimit {
 		return limitError("Embed title")
 	}
-
 	embedLength += len(e.Title)
 	if len(e.Description) > EmbedDescriptionLimit {
 		return limitError("Embed description")
 	}
-
 	embedLength += len(e.Description)
 	if len(e.Author.Name) > AuthorNameLimit {
 		return limitError("Embed author name")
 	}
-
 	embedLength += len(e.Author.Name)
 	if e.Footer != (Footer{}) {
 		err := validateFooter(e.Footer)
 		if err != nil {
 			return err
 		}
-
 		embedLength += len(e.Footer.Text)
 	}
-
 	if len(e.Fields) > EmbedFieldNumLimit {
 		return limitError("Embed field number")
 	}
@@ -109,7 +104,6 @@ func validateURL(url string) error {
 	if !strings.HasPrefix(url, webhookPrefix) {
 		return errors.New("URL invalid")
 	}
-
 	return nil
 }
 
@@ -119,11 +113,9 @@ func validateMessage(m Message) error {
 	if m.Content == "" && len(m.Embeds) == 0 {
 		return errors.New("Message must have either content or embeds")
 	}
-
 	if len(m.Content) > MessageContentLimit {
 		return limitError("Message content")
 	}
-
 	if len(m.Embeds) > MessageEmbedNumLimit {
 		return limitError("Message embed number")
 	}
