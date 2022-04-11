@@ -280,7 +280,7 @@ func TestValidateRequest(t *testing.T) {
 	t.Run("URL error", func(t *testing.T) {
 		msgs := []Message{{Content: "Ok"}}
 		url := "wrong"
-		req := request{msgs, url, http.DefaultClient}
+		req := Request{msgs, url, http.DefaultClient}
 
 		err := validateRequest(req)
 
@@ -290,7 +290,7 @@ func TestValidateRequest(t *testing.T) {
 	t.Run("No message", func(t *testing.T) {
 		msgs := []Message{}
 		url := "https://discord.com/api/webhooks/"
-		req := request{msgs, url, http.DefaultClient}
+		req := Request{msgs, url, http.DefaultClient}
 
 		err := validateRequest(req)
 
@@ -301,7 +301,7 @@ func TestValidateRequest(t *testing.T) {
 	t.Run("Message error", func(t *testing.T) {
 		msgs := []Message{{Content: "Ok"}, {}} // Failed on second make sure it loops.
 		url := "https://discord.com/api/webhooks/"
-		req := request{msgs, url, http.DefaultClient}
+		req := Request{msgs, url, http.DefaultClient}
 
 		err := validateRequest(req)
 
@@ -311,7 +311,7 @@ func TestValidateRequest(t *testing.T) {
 	t.Run("Pass", func(t *testing.T) {
 		msgs := []Message{{Content: "Ok"}}
 		url := "https://discord.com/api/webhooks/"
-		req := request{msgs, url, http.DefaultClient}
+		req := Request{msgs, url, http.DefaultClient}
 
 		err := validateRequest(req)
 

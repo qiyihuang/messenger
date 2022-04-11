@@ -137,7 +137,7 @@ func validateMessage(m Message) error {
 }
 
 // validateRequest calls validateURL and validateMessage to check validity of a Request.
-func validateRequest(r request) error {
+func validateRequest(r Request) error {
 	if err := validateURL(r.url); err != nil {
 		return err
 	}
