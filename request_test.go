@@ -13,33 +13,40 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewRequest(t *testing.T) {
+func TestNewClient(t *testing.T) {
 	t.Run("error", func(t *testing.T) {
-		msgs := []Message{}
-		url := "https://discord.com/api/webhooks/something"
+		url := "wrong"
 
-		req, err := NewRequest(http.DefaultClient, url, msgs)
+		c, err := NewClient(http.DefaultClient, url)
 
-		require.Equal(t, (*Request)(nil), req, "TestNewRequest error failed")
-		require.EqualError(t, err, "request must have a least 1 message")
+		require.Equal(t, (*Client)(nil), c, "TestNewClient error failed")
+		require.EqualError(t, err, "invalid webhook URL")
 	})
 
 	t.Run("success", func(t *testing.T) {
-		msgs := []Message{{Content: "test"}}
 		url := "https://discord.com/api/webhooks/something"
 
-		_, err := NewRequest(http.DefaultClient, url, msgs)
+		_, err := NewClient(http.DefaultClient, url)
 
 		require.NoError(t, err)
 	})
 }
 
-func TestRequestSend(t *testing.T) {
+func TestClientSend(t *testing.T) {
+	t.Run("validateMessages error", func(t *testing.T) {
+		// %% will fail makeRequest
+		c := &Client{url: "ok", client: http.DefaultClient}
+
+		_, err := c.Send([]Message{})
+
+		require.Error(t, err)
+	})
+
 	t.Run("makeRequest error", func(t *testing.T) {
 		// %% will fail makeRequest
-		r := Request{messages: []Message{{Content: "Ok"}}, url: "%%", client: http.DefaultClient}
+		c := &Client{url: "%%", client: http.DefaultClient}
 
-		_, err := r.Send()
+		_, err := c.Send([]Message{{Content: "Ok"}})
 
 		require.Error(t, err)
 	})
@@ -56,9 +63,9 @@ func TestRequestSend(t *testing.T) {
 		}))
 		defer server.Close()
 
-		r := Request{messages: []Message{{Content: "Ok"}}, url: server.URL, client: http.DefaultClient}
+		c := &Client{url: server.URL, client: http.DefaultClient}
 
-		_, err := r.Send()
+		_, err := c.Send([]Message{{Content: "Ok"}})
 
 		require.Equal(t, errors.New("Discord API error: test error"), err, "respError error failed")
 	})
@@ -69,9 +76,9 @@ func TestRequestSend(t *testing.T) {
 		}))
 		defer server.Close()
 
-		r := Request{messages: []Message{{Content: "Ok"}}, url: server.URL, client: http.DefaultClient}
+		c := &Client{url: server.URL, client: http.DefaultClient}
 
-		_, err := r.Send()
+		_, err := c.Send([]Message{{Content: "Ok"}})
 
 		require.IsType(t, &strconv.NumError{}, err, "respError error failed")
 	})
@@ -80,9 +87,9 @@ func TestRequestSend(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 		defer server.Close()
 
-		r := Request{messages: []Message{{Content: "Ok"}}, url: server.URL, client: http.DefaultClient}
+		c := &Client{url: server.URL, client: http.DefaultClient}
 
-		_, err := r.Send()
+		_, err := c.Send([]Message{{Content: "Ok"}})
 
 		require.NoError(t, err)
 	})

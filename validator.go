@@ -102,7 +102,7 @@ func validateEmbed(e Embed) error {
 func validateURL(url string) error {
 	const webhookPrefix = "https://discord.com/api/webhooks/"
 	if !strings.HasPrefix(url, webhookPrefix) {
-		return errors.New("URL invalid")
+		return errors.New("invalid webhook URL")
 	}
 	return nil
 }
@@ -129,16 +129,12 @@ func validateMessage(m Message) error {
 }
 
 // validateRequest calls validateURL and validateMessage to check validity of a Request.
-func validateRequest(r Request) error {
-	if err := validateURL(r.url); err != nil {
-		return err
-	}
-
-	if len(r.messages) == 0 {
+func validateMessages(msgs []Message) error {
+	if len(msgs) == 0 {
 		return errors.New("request must have a least 1 message")
 	}
 
-	for _, msg := range r.messages {
+	for _, msg := range msgs {
 		if err := validateMessage(msg); err != nil {
 			return err
 		}

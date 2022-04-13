@@ -2,7 +2,6 @@ package messenger
 
 import (
 	"errors"
-	"net/http"
 	"strings"
 	"testing"
 
@@ -220,7 +219,7 @@ func TestValidateURL(t *testing.T) {
 
 		err := validateURL(url)
 
-		require.Equal(t, errors.New("URL invalid"), err, "Invalid failed")
+		require.Equal(t, errors.New("invalid webhook URL"), err, "Invalid failed")
 	})
 
 	t.Run("Pass", func(t *testing.T) {
@@ -276,23 +275,11 @@ func TestValidateMessage(t *testing.T) {
 	})
 }
 
-func TestValidateRequest(t *testing.T) {
-	t.Run("URL error", func(t *testing.T) {
-		msgs := []Message{{Content: "Ok"}}
-		url := "wrong"
-		req := Request{msgs, url, http.DefaultClient}
-
-		err := validateRequest(req)
-
-		require.EqualError(t, err, "URL invalid")
-	})
-
+func TestValidateMessages(t *testing.T) {
 	t.Run("No message", func(t *testing.T) {
 		msgs := []Message{}
-		url := "https://discord.com/api/webhooks/"
-		req := Request{msgs, url, http.DefaultClient}
 
-		err := validateRequest(req)
+		err := validateMessages(msgs)
 
 		require.EqualError(t, err, "request must have a least 1 message")
 
@@ -300,20 +287,16 @@ func TestValidateRequest(t *testing.T) {
 
 	t.Run("Message error", func(t *testing.T) {
 		msgs := []Message{{Content: "Ok"}, {}} // Failed on second make sure it loops.
-		url := "https://discord.com/api/webhooks/"
-		req := Request{msgs, url, http.DefaultClient}
 
-		err := validateRequest(req)
+		err := validateMessages(msgs)
 
 		require.EqualError(t, err, "Message must have either content or embeds")
 	})
 
 	t.Run("Pass", func(t *testing.T) {
 		msgs := []Message{{Content: "Ok"}}
-		url := "https://discord.com/api/webhooks/"
-		req := Request{msgs, url, http.DefaultClient}
 
-		err := validateRequest(req)
+		err := validateMessages(msgs)
 
 		require.Equal(t, nil, err, "Message error failed")
 	})
