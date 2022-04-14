@@ -1,18 +1,16 @@
 # Messenger
 
-Messenger sends messages to a Discord webhook address while complying with the dynamic rate limiting.
-
-**There is no way the libray can manage rate limit imposed on channel and server, user need to manage these limit in these cases (e.g. other webhooks also post messages to the same channel).**
+Messenger sends messages to a Discord webhook address while complying with the dynamic rate limiting (**User needs to manage rate limit imposed on channel/server, the library cannot detect if other webhooks also post messages to the same channel/server**).
 
 ## Usage
 
-### In go.mod
+### Installing
 
 ```bash
-require github.com/qiyihuang/messenger v0.4
+go get github.com/qiyihuang/messenger
 ```
 
-### Send a message
+### Sending messages
 
 ```go
 package main
@@ -25,34 +23,33 @@ import (
 
 
 func main() {
-    client := &http.Client{
+    hc := &http.Client{
         // Client config
     }
     url := "https://discord.com/api/webhooks/..."
-    msgs :=
-        []messenger.Message{
-            {
-                Username: "Webhook username",
-                Content:  "Message 1",
-                Embeds: []messenger.Embed{
-                    // More fields please check go doc or Discord API.
-                    {Title: "Embed 1", Description: "Embed description 1"},
-                },
-            },
-            {
-                Username: "Webhook username",
-                Content:  "Message 2",
-            },
-        }
-
-    req, err := messenger.NewRequest(client, url, msgs)
+    client, err := messenger.NewClient(hc, url)
     if err != nil {
-        // handle when the request is invalid...
+        // handle when creating new client failed.
     }
 
-    resp, err := req.Send()
+    msgs := []messenger.Message{
+        {
+            Username: "Webhook username",
+            Content:  "Message 1",
+            Embeds: []messenger.Embed{
+                // More fields please check go doc or Discord API.
+                {Title: "Embed 1", Description: "Embed description 1"},
+            },
+        },
+        {
+            Username: "Webhook username",
+            Content:  "Message 2",
+        },
+    }
+
+    resp, err := client.Send(msgs)
     if err != nil {
-        // ...
+        // handle when sending failed.
     }
 
     // ...
@@ -61,4 +58,4 @@ func main() {
 
 ### Discord message limits
 
-Use [these constants](https://pkg.go.dev/github.com/qiyihuang/messenger#pkg-constants) to manage message limits.
+[Constants](https://pkg.go.dev/github.com/qiyihuang/messenger#pkg-constants) provided for managing message limits.
