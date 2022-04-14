@@ -1,8 +1,11 @@
 package messenger
 
+import "io"
+
 // Message represents a webhook message.
 type Message struct {
 	Embeds   []Embed `json:"embeds,omitempty"`
+	Files    []*File `json:"-"`
 	Content  string  `json:"content,omitempty"`
 	Username string  `json:"username,omitempty"`
 }
@@ -22,7 +25,16 @@ type Embed struct {
 	Color       int       `json:"color,omitempty"`
 }
 
-// Timestamp represents the timestamp string in an embed object.
+type File struct {
+	// Name must include file extension (e.g. .jpg)
+	Name string
+	// Usually not required for common file types, check Discord docs if not working.
+	// https://discord.com/developers/docs/reference#image-data/
+	ContentType string
+	Reader      io.Reader
+}
+
+// Timestamp represents the timestamp string in an embed object
 // Format timestamp using .UTC().Format("2006-01-02T15:04:05-0700"),
 // Discord will convert it to local time on display.
 type Timestamp string
