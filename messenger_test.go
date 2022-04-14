@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -96,6 +97,19 @@ func TestClientSend(t *testing.T) {
 }
 
 func TestMakeRequest(t *testing.T) {
+	t.Run("multipartBody no error", func(t *testing.T) {
+		msg := Message{Files: []*File{
+			{Name: "Test", Reader: bytes.NewBuffer([]byte{1})},
+		}}
+		clt := &http.Client{}
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+		defer server.Close()
+
+		_, err := makeRequest(msg, server.URL, clt)
+
+		require.NoError(t, err, "multipartBody no error failed")
+	})
+
 	t.Run("NewRequest error", func(t *testing.T) {
 		msg := Message{}
 		url := "%%" // This will make NewRequest failed
@@ -130,104 +144,94 @@ func TestMakeRequest(t *testing.T) {
 	})
 }
 
-func TestCountEmbed(t *testing.T) {
-	var total = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8
-	embed := Embed{
-		Title:       strings.Repeat("t", 1),
-		Description: strings.Repeat("t", 2),
-		Author:      Author{Name: strings.Repeat("t", 3)},
-		Footer:      Footer{Text: strings.Repeat("t", 4)},
-		Fields: []Field{
-			{Name: strings.Repeat("t", 5), Value: strings.Repeat("t", 6)},
-			{Name: strings.Repeat("t", 7), Value: strings.Repeat("t", 8)},
-		},
-	}
+func TestWriteBody(t *testing.T) {
+	t.Run("Normal body", func(t *testing.T) {
+		msg := Message{Content: "test"}
 
-	count := countEmbed(embed)
+		contentType, body, err := writeBody(msg)
 
-	require.Equal(t, total, count, "CountEmbed failed")
-}
-
-func TestDivideEmbeds(t *testing.T) {
-	t.Run("Divide by embed character limit", func(t *testing.T) {
-		expectedNumber := 3 //1000 + 2000 + 3000, 3000, 4000 + 2000
-		embeds := []Embed{
-			{Description: strings.Repeat("t", 1000)},
-			{Description: strings.Repeat("e", 2000)},
-			{Description: strings.Repeat("s", 3000)},
-			{Description: strings.Repeat("t", 3000)},
-			{Description: strings.Repeat("t", 4000)},
-			{Description: strings.Repeat("t", 2000)},
-		}
-		msg := Message{Username: "t", Content: "test", Embeds: embeds}
-
-		dividedEmbeds := divideEmbeds(msg)
-
-		require.Equal(t, expectedNumber, len(dividedEmbeds), "Divide by embed character limit failed")
+		require.Equal(t, contentType, "application/json", "Normal body failed")
+		require.NotEmpty(t, body, "Normal body failed")
+		require.NoError(t, err, "Normal body failed")
 	})
 
-	t.Run("Divide by embed number", func(t *testing.T) {
-		expectedNumber := 3
-		embeds := []Embed{ // 21 embeds
-			{Description: "t"},
-			{Description: "t"},
-			{Description: "t"},
-			{Description: "t"},
-			{Description: "t"},
-			{Description: "t"},
-			{Description: "t"},
-			{Description: "t"},
-			{Description: "t"},
-			{Description: "t"},
-			{Description: "t"},
-			{Description: "t"},
-			{Description: "t"},
-			{Description: "t"},
-			{Description: "t"},
-			{Description: "t"},
-			{Description: "t"},
-			{Description: "t"},
-			{Description: "t"},
-			{Description: "t"},
-			{Description: "t"},
+	t.Run("Multipart body", func(t *testing.T) {
+		msg := Message{
+			Content: "test",
+			Files: []*File{
+				{Name: "test.jpg", Reader: bytes.NewBuffer([]byte{1})},
+			},
 		}
-		msg := Message{Username: "t", Content: "test", Embeds: embeds}
 
-		dividedEmbeds := divideEmbeds(msg)
+		contentType, body, err := writeBody(msg)
 
-		require.Equal(t, expectedNumber, len(dividedEmbeds), "Divide by embed number failed")
+		require.True(t, strings.Contains(contentType, "multipart/form-data"), "Multipart body failed")
+		require.NotEmpty(t, body, "Multipart body failed")
+		require.NoError(t, err, "Multipart body failed")
 	})
 }
 
-func TestDivideMessages(t *testing.T) {
-	t.Run("Content in only 1 message", func(t *testing.T) {
-		content := "test"
-		embeds := []Embed{
-			{Description: strings.Repeat("t", 4000)},
-			{Description: strings.Repeat("e", 4000)},
-			{Description: strings.Repeat("s", 4000)},
-		}
-		msgs := []Message{
-			{Username: "t", Content: content, Embeds: embeds},
-		}
-
-		dividedMsgs := divideMessages(msgs)
-
-		require.Equal(t, content, dividedMsgs[0].Content, "Content in first message failed")
-		require.Equal(t, "", dividedMsgs[1].Content, "Content in second message failed")
-		require.Equal(t, "", dividedMsgs[2].Content, "Content in third message failed")
-	})
+type writerMock struct {
 }
 
-func TestFormatBody(t *testing.T) {
+func (w writerMock) Write(p []byte) (n int, err error) {
+	return 0, errors.New("Test")
+}
+
+func TestWritePayload(t *testing.T) {
+	t.Run("CreatePart error", func(t *testing.T) {
+		msg := Message{Content: "something"}
+		w := writerMock{}
+		mpw := multipart.NewWriter(w)
+
+		err := writePayload(msg, mpw)
+
+		require.Error(t, err, "Test", "CreatePart error failed")
+	})
+
 	t.Run("No error", func(t *testing.T) {
-		msg := Message{}
-		jsonMsg, _ := json.Marshal(msg)
-		expectedBody := bytes.NewBuffer(jsonMsg)
+		msg := Message{Content: "something"}
+		mpw := multipart.NewWriter(&bytes.Buffer{})
 
-		body := formatBody(msg)
+		err := writePayload(msg, mpw)
 
-		require.Equal(t, expectedBody, body, "Json marshal no error failed")
+		require.NoError(t, err, "No error failed")
+	})
+}
+
+func TestWriteFiles(t *testing.T) {
+	t.Run("CreatePart error", func(t *testing.T) {
+		files := []*File{
+			{
+				Name: "test.jpg",
+			},
+		}
+		w := writerMock{}
+		mpw := multipart.NewWriter(w)
+
+		err := writeFiles(files, mpw)
+
+		require.Error(t, err, "Test", "CreatePart error failed")
+	})
+
+	t.Run("No error", func(t *testing.T) {
+		// No io.Reader to copy from.
+		files := []*File{
+			{
+				Name:   "test.jpg",
+				Reader: bytes.NewBuffer([]byte{1}),
+			},
+			{
+				Name:        "test2.jpg",
+				ContentType: "image/jpeg",
+				Reader:      bytes.NewBuffer([]byte{1}),
+			},
+		}
+		mpw := multipart.NewWriter(&bytes.Buffer{})
+
+		err := writeFiles(files, mpw)
+
+		require.NoError(t, err, "No error failed")
 	})
 }
 
